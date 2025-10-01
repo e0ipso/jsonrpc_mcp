@@ -38,3 +38,245 @@ Before taking ANY action (commits, PRs, file creation, etc.), verify:
 - Do not add "helpful" extras unless specifically requested
 - Do not anticipate future needs
 - Stay focused on the immediate task
+
+---
+
+# Project Overview
+
+This is a Drupal module that bridges JSON-RPC method plugins with the Model Context Protocol (MCP) specification (version 2025-06-18). The module enables Drupal sites to expose their JSON-RPC methods as MCP tools, allowing AI assistants like Claude Desktop to discover and invoke Drupal functionality.
+
+## Architecture
+
+### Core Concept
+
+The module uses a dual-attribute pattern:
+
+1. **Existing `#[JsonRpcMethod]` attribute** (from jsonrpc module) - Defines the JSON-RPC endpoint
+2. **New `#[McpTool]` attribute** (to be implemented) - Marks methods for MCP exposure and adds MCP-specific metadata
+
+### Metadata Transformation Flow
+
+```
+JSON-RPC Plugin Definition
+    ↓
+#[JsonRpcMethod] + #[McpTool] attributes
+    ↓
+Discovery Service (reads attributes)
+    ↓
+MCP Tool Normalizer (converts to MCP schema)
+    ↓
+/mcp/tools/list endpoint (returns MCP-compliant JSON)
+```
+
+### Key Mapping Rules
+
+JSON-RPC to MCP transformation:
+
+- `id` → `name` (unique tool identifier)
+- `usage` (TranslatableMarkup) → `description` (string)
+- `params` (array of JsonRpcParameterDefinition) → `inputSchema` (JSON Schema object with properties/required)
+- `output` (array) → `outputSchema` (JSON Schema)
+- `#[McpTool]` provides: `title` (optional), `annotations` (optional metadata)
+
+### JSON Schema Conversion
+
+Parameters must be converted from flat JsonRpcParameterDefinition array to JSON Schema object:
+
+- Parameter `id` → property name
+- Parameter `schema` → property schema
+- Parameter `required` → added to `required` array
+- Parameter `description` → property description
+
+## Dependencies
+
+### Required
+
+- **drupal/jsonrpc** (^3.0.0-beta1) - Provides base JSON-RPC infrastructure with PHP 8 attributes
+- PHP 8.1+ (for attribute support)
+- Drupal 10.2+ or 11.x
+
+### Important JSON-RPC Module Details
+
+- Uses `Drupal\jsonrpc\Attribute\JsonRpcMethod` (extends Plugin attribute)
+- Uses `Drupal\jsonrpc\Attribute\JsonRpcParameterDefinition`
+- Plugin discovery via attribute scanning
+- Access control inherited from `access` parameter in JsonRpcMethod
+
+## Development Commands
+
+### Testing
+
+```bash
+# Run all tests for this module
+vendor/bin/phpunit --group jsonrpc_mcp
+
+# Run specific test suite
+vendor/bin/phpunit --testsuite=unit
+vendor/bin/phpunit --testsuite=kernel
+vendor/bin/phpunit --testsuite=functional
+
+# Run single test file
+vendor/bin/phpunit tests/src/Unit/YourTest.php
+```
+
+### Code Quality
+
+```bash
+# Check coding standards
+vendor/bin/phpcs --standard=Drupal,DrupalPractice src/ tests/
+
+# Auto-fix coding standards
+vendor/bin/phpcbf --standard=Drupal,DrupalPractice src/ tests/
+
+# Static analysis (PHPStan level 5)
+vendor/bin/phpstan analyze
+
+# JavaScript/CSS linting
+npm run lint:check
+npm run lint:fix
+
+# Spell checking
+npm run cspell:check
+```
+
+### Testing MCP Endpoints
+
+```bash
+# Test discovery endpoint (after implementation)
+curl https://drupal-site/mcp/tools/list | jq
+
+# Test specific tool discovery
+curl https://drupal-site/mcp/tools/list | jq '.tools[] | select(.name == "cache.rebuild")'
+
+# Test with MCP Inspector
+npx @modelcontextprotocol/inspector https://drupal-site/mcp/tools/list
+```
+
+## Implementation Roadmap (Current State)
+
+The module is currently in initial setup phase. The following components need to be implemented:
+
+1. **`#[McpTool]` PHP Attribute** (`src/Attribute/McpTool.php`)
+   - Extends `Drupal\Component\Plugin\Attribute\Plugin`
+   - Properties: `title` (optional string), `annotations` (optional array)
+   - Should be placed on same class as `#[JsonRpcMethod]`
+
+2. **MCP Tool Discovery Service**
+   - Scans for plugins with both `#[JsonRpcMethod]` and `#[McpTool]` attributes
+   - Extracts metadata from both attributes
+   - Returns merged tool definitions
+
+3. **MCP Tool Normalizer** (`src/Normalizer/McpToolNormalizer.php`)
+   - Converts JSON-RPC method definition to MCP tool schema
+   - Handles parameter → inputSchema conversion
+   - Implements pagination cursor logic
+
+4. **Discovery Controller** (`src/Controller/McpToolsController.php`)
+   - Endpoint: `/mcp/tools/list`
+   - Query param: `cursor` (optional, for pagination)
+   - Returns: `{"tools": [...], "nextCursor": null|string}`
+
+5. **Optional: Well-known Endpoint** (`src/Controller/McpDiscoveryController.php`)
+   - Endpoint: `/.well-known/mcp.json`
+   - Returns server capabilities and tool endpoint URL
+
+## Standards Compliance
+
+### MCP Specification (2025-06-18)
+
+- Tool schema must include: `name`, `description`, `inputSchema`
+- Optional fields: `title`, `outputSchema`, `annotations`
+- Pagination via `cursor`/`nextCursor` parameters
+- JSON Schema Draft 7 for all schemas
+
+### Security Considerations
+
+- Access control inherited from JSON-RPC `access` parameter (array of permissions)
+- All permissions in array must be satisfied (AND logic)
+- MCP clients authenticate via standard Drupal authentication
+- No new authentication mechanism required
+
+## File Structure
+
+```
+src/
+├── Attribute/
+│   └── McpTool.php              # [TODO] PHP attribute for MCP marking
+├── Controller/
+│   ├── McpToolsController.php   # [TODO] /mcp/tools/list endpoint
+│   └── McpDiscoveryController.php # [TODO] /.well-known/mcp.json
+├── Normalizer/
+│   └── McpToolNormalizer.php    # [TODO] JSON-RPC → MCP conversion
+├── Service/
+│   └── McpToolDiscovery.php     # [TODO] Tool discovery service
+└── Trait/
+    └── DebugLoggingTrait.php    # Test helper for debug output
+
+tests/
+├── src/
+│   ├── Unit/                    # Fast unit tests (no Drupal bootstrap)
+│   ├── Kernel/                  # Kernel tests (minimal bootstrap)
+│   ├── Functional/              # Browser tests
+│   └── FunctionalJavascript/    # Browser tests with JS
+└── modules/
+    └── jsonrpc_mcp_test/        # Test module for functional tests
+```
+
+## Example: Creating an MCP-Enabled JSON-RPC Method
+
+```php
+namespace Drupal\mymodule\Plugin\jsonrpc\Method;
+
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\jsonrpc\Attribute\JsonRpcMethod;
+use Drupal\jsonrpc\Attribute\JsonRpcParameterDefinition;
+use Drupal\jsonrpc_mcp\Attribute\McpTool;
+use Drupal\jsonrpc\Plugin\JsonRpcMethodBase;
+use Drupal\jsonrpc\JsonRpcObject\ParameterBag;
+
+#[JsonRpcMethod(
+  id: "mymodule.doSomething",
+  usage: new TranslatableMarkup("Performs a custom operation"),
+  access: ["administer site configuration"],
+  params: [
+    'input' => new JsonRpcParameterDefinition(
+      'input',
+      ["type" => "string"],
+      null,
+      new TranslatableMarkup("The input value"),
+      true
+    ),
+  ]
+)]
+#[McpTool(
+  title: "Do Something Custom",
+  annotations: ['category' => 'custom']
+)]
+class DoSomething extends JsonRpcMethodBase {
+
+  public function execute(ParameterBag $params): array {
+    $input = $params->get('input');
+    // Implementation
+    return ['result' => $input];
+  }
+
+  public static function outputSchema(): array {
+    return [
+      'type' => 'object',
+      'properties' => [
+        'result' => ['type' => 'string'],
+      ],
+    ];
+  }
+}
+```
+
+## Testing Pattern
+
+All test classes use the `@group jsonrpc_mcp` annotation for easy filtering. Test classes follow Drupal naming conventions:
+
+- Unit tests: `tests/src/Unit/*Test.php`
+- Kernel tests: `tests/src/Kernel/*Test.php` with `protected static $modules = ['jsonrpc_mcp'];`
+- Functional tests: `tests/src/Functional/*Test.php` with module dependencies
+
+The `DebugLoggingTrait` is available for test debugging (outputs to browser_output directory).
