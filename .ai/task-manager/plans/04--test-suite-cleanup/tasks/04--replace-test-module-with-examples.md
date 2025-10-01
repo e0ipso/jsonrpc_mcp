@@ -2,7 +2,7 @@
 id: 4
 group: 'test-cleanup'
 dependencies: [1, 2, 3]
-status: 'pending'
+status: 'completed'
 created: '2025-10-01'
 skills:
   - drupal-backend
