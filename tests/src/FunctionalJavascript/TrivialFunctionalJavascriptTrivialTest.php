@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Drupal\Tests\gh_contrib_template\FunctionalJavascript;
+namespace Drupal\Tests\jsonrpc_mcp\FunctionalJavascript;
 
 use Drupal\FunctionalJavascriptTests\WebDriverTestBase;
 
 /**
  * Trivial functional javascript test to ensure JS test infrastructure works.
  *
- * @group gh_contrib_template
+ * @group jsonrpc_mcp
  */
 class TrivialFunctionalJavascriptTrivialTest extends WebDriverTestBase {
 
   /**
    * {@inheritdoc}
    */
-  protected static $modules = ['gh_contrib_template'];
+  protected static $modules = ['jsonrpc_mcp'];
 
   /**
    * {@inheritdoc}

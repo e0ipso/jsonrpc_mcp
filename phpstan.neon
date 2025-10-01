@@ -6,4 +6,4 @@ parameters:
     - tests/
   ignoreErrors:
     - '#Trying to mock an undefined method .* on class .*ContextRepositoryInterface#'
-    - '#Trait Drupal\\gh_contrib_template\\Trait\\DebugLoggingTrait is used zero times and is not analysed#'
+    - '#Trait Drupal\\jsonrpc_mcp\\Trait\\DebugLoggingTrait is used zero times and is not analysed#'

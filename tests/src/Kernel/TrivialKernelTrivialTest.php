@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Drupal\Tests\gh_contrib_template\Kernel;
+namespace Drupal\Tests\jsonrpc_mcp\Kernel;
 
 use Drupal\KernelTests\KernelTestBase;
 
 /**
  * Trivial kernel test to ensure kernel test infrastructure works.
  *
- * @group gh_contrib_template
+ * @group jsonrpc_mcp
  */
 class TrivialKernelTrivialTest extends KernelTestBase {
 
   /**
    * {@inheritdoc}
    */
-  protected static $modules = ['gh_contrib_template'];
+  protected static $modules = ['jsonrpc_mcp'];
 
   /**
    * Tests that kernel tests can run.

@@ -38,14 +38,14 @@ The module uses PHP 8 attributes to mark JSON-RPC methods for MCP exposure. When
 
 The module automatically maps JSON-RPC method metadata to MCP tool schema:
 
-| JSON-RPC Field | MCP Field | Description |
-|----------------|-----------|-------------|
-| `id` | `name` | Unique tool identifier |
-| `usage` | `description` | Human-readable description |
-| `params` | `inputSchema` | JSON Schema for parameters |
-| `output` | `outputSchema` | JSON Schema for return value |
-| (via `#[McpTool]`) | `title` | Display name for the tool |
-| (via `#[McpTool]`) | `annotations` | MCP-specific metadata |
+| JSON-RPC Field     | MCP Field      | Description                  |
+| ------------------ | -------------- | ---------------------------- |
+| `id`               | `name`         | Unique tool identifier       |
+| `usage`            | `description`  | Human-readable description   |
+| `params`           | `inputSchema`  | JSON Schema for parameters   |
+| `output`           | `outputSchema` | JSON Schema for return value |
+| (via `#[McpTool]`) | `title`        | Display name for the tool    |
+| (via `#[McpTool]`) | `annotations`  | MCP-specific metadata        |
 
 ## Usage
 
@@ -153,12 +153,14 @@ This automatically generates the MCP tool schema:
 MCP-compliant tool listing endpoint with pagination support:
 
 **Request:**
+
 ```http
 GET /mcp/tools/list
 GET /mcp/tools/list?cursor=abc123
 ```
 
 **Response:**
+
 ```json
 {
   "tools": [
@@ -188,11 +190,13 @@ GET /mcp/tools/list?cursor=abc123
 Discovery endpoint for automatic MCP server registration:
 
 **Request:**
+
 ```http
 GET /.well-known/mcp.json
 ```
 
 **Response:**
+
 ```json
 {
   "name": "Drupal MCP Server",
@@ -297,11 +301,13 @@ MCP clients can discover authorization endpoints via standard `.well-known` URIs
 ### Creating Custom MCP Tools
 
 1. **Create a JSON-RPC Method Plugin**
+
    ```bash
    mkdir -p src/Plugin/jsonrpc/Method
    ```
 
 2. **Add the Method Class**
+
    ```php
    namespace Drupal\mymodule\Plugin\jsonrpc\Method;
 
@@ -311,6 +317,7 @@ MCP clients can discover authorization endpoints via standard `.well-known` URIs
    ```
 
 3. **Clear Cache**
+
    ```bash
    drush cache:rebuild
    ```

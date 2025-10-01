@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Drupal\Tests\gh_contrib_template\Unit;
+namespace Drupal\Tests\jsonrpc_mcp\Unit;
 
 use PHPUnit\Framework\TestCase;
 
 /**
  * Trivial unit test to ensure unit test infrastructure works.
  *
- * @group gh_contrib_template
+ * @group jsonrpc_mcp
  */
 class TrivialUnitTrivialTest extends TestCase {
 

@@ -1,0 +1,7 @@
+name: JSON-RPC MCP Bridge Test
+type: module
+description: 'Test module for JSON-RPC MCP Bridge functional tests'
+core_version_requirement: ^10.2 || ^11
+package: Testing
+dependencies:
+  - drupal:jsonrpc_mcp

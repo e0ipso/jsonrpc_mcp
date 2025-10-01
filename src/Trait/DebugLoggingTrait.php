@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Drupal\gh_contrib_template\Trait;
+namespace Drupal\jsonrpc_mcp\Trait;
 
 use Drupal\TestTools\Extension\HtmlLogging\HtmlOutputLogger;
 

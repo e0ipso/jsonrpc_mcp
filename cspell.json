@@ -36,7 +36,9 @@
     "namespacing",
     "Packagist",
     "packagist",
-    "drupalcode"
+    "drupalcode",
+    "mymodule",
+    "modelcontextprotocol"
   ],
   "ignorePaths": [
     "node_modules/**",

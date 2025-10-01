@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Drupal\Tests\gh_contrib_template\Functional;
+namespace Drupal\Tests\jsonrpc_mcp\Functional;
 
 use Drupal\Tests\BrowserTestBase;
 
 /**
  * Trivial functional test to ensure functional test infrastructure works.
  *
- * @group gh_contrib_template
+ * @group jsonrpc_mcp
  */
 class TrivialFunctionalTrivialTest extends BrowserTestBase {
 
   /**
    * {@inheritdoc}
    */
-  protected static $modules = ['gh_contrib_template'];
+  protected static $modules = ['jsonrpc_mcp'];
 
   /**
    * {@inheritdoc}
