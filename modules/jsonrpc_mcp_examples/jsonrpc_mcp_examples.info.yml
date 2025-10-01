@@ -1,0 +1,9 @@
+name: JSON-RPC MCP Examples
+description: Example MCP tools demonstrating JSON-RPC method patterns with MCP annotations
+type: module
+core_version_requirement: ^10.2 || ^11
+package: Web services
+dependencies:
+  - jsonrpc:jsonrpc (>= 3.0.0-beta1)
+  - drupal:node
+  - jsonrpc_mcp:jsonrpc_mcp
