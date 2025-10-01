@@ -264,11 +264,11 @@ graph TD
 
 - Reference: `.ai/task-manager/config/hooks/POST_PHASE.md`
 
-### Phase 1: Foundation
+### ✅ Phase 1: Foundation
 
 **Parallel Tasks:**
 
-- Task 001: Create jsonrpc_mcp_examples Submodule Structure
+- ✔️ Task 001: Create jsonrpc_mcp_examples Submodule Structure [completed]
 
 ### Phase 2: Method Implementation
 

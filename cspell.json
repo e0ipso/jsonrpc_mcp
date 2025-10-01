@@ -39,7 +39,8 @@
     "drupalcode",
     "mymodule",
     "modelcontextprotocol",
-    "endcode"
+    "endcode",
+    "nids"
   ],
   "ignorePaths": [
     "node_modules/**",

@@ -2,7 +2,7 @@
 id: 2
 group: 'example-methods'
 dependencies: [1]
-status: 'pending'
+status: 'completed'
 created: '2025-10-01'
 skills: ['drupal-backend', 'php']
 ---

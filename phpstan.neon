@@ -4,6 +4,8 @@ parameters:
   paths:
     - src/
     - tests/
+    - modules/
   ignoreErrors:
     - '#Trying to mock an undefined method .* on class .*ContextRepositoryInterface#'
     - '#Trait Drupal\\jsonrpc_mcp\\Trait\\DebugLoggingTrait is used zero times and is not analysed#'
+    - '#Unsafe usage of new static\(\)#'
