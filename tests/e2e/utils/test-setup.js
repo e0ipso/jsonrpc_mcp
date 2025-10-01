@@ -19,7 +19,7 @@ async function createUniqueAdminUser(testName = 'default') {
 
   // Create user with unique credentials
   await execDrushInTestSite(
-    `user:create ${username} --mail="${email}" --password="${password}"`,
+    `user:create ${username} --mail = "${email}" --password = "${password}"`,
   );
   await execDrushInTestSite(`user:role:add administrator ${username}`);
 

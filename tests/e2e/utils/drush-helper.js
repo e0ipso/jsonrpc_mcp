@@ -31,7 +31,7 @@ async function execDrushInTestSite(command, options = {}) {
 
   try {
     // Use drush with database access
-    const drushCommand = `vendor/bin/drush ${command}`;
+    const drushCommand = `vendor / bin / drush ${command}`;
 
     // Execute synchronously to match the expected API
     const result = execSync(drushCommand, defaults);
@@ -105,7 +105,7 @@ async function getSiteStatus() {
  */
 async function enableModule(moduleName) {
   try {
-    await execDrushInTestSite(`pm:enable ${moduleName} -y`);
+    await execDrushInTestSite(`pm:enable ${moduleName} - y`);
     return true;
   } catch (error) {
     console.error(`Failed to enable module ${moduleName}:`, error.message);
@@ -145,7 +145,7 @@ async function createAdminUser(
     // Try to create user (might already exist)
     try {
       await execDrushInTestSite(
-        `user:create ${username} --mail="${email}" --password="${password}"`,
+        `user:create ${username} --mail = "${email}" --password = "${password}"`,
       );
     } catch (createError) {
       // User might already exist, try to reset password instead
@@ -162,7 +162,7 @@ async function createAdminUser(
     };
   } catch (error) {
     console.error(
-      `Failed to create/setup admin user ${username}:`,
+      `Failed to create / setup admin user ${username}:`,
       error.message,
     );
     return {

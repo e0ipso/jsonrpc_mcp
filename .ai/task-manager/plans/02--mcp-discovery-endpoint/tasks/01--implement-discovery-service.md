@@ -2,7 +2,7 @@
 id: 1
 group: 'mcp-discovery-endpoint'
 dependencies: []
-status: 'pending'
+status: 'completed'
 created: '2025-10-01'
 skills: ['drupal-service-architecture', 'php-reflection-api']
 ---

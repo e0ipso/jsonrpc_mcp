@@ -32,7 +32,7 @@ async function getThemeRegions(theme = null) {
   try {
     const activeTheme = theme || (await getActiveTheme());
     const result = await execDrushInTestSite(
-      `theme:list --status=enabled --format=json`,
+      `theme:list --status = enabled --format = json`,
     );
     const themeData = JSON.parse(result);
 
