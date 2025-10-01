@@ -1,0 +1,7 @@
+name: JSON-RPC MCP Bridge
+description: Exposes JSON-RPC method plugins as MCP (Model Context Protocol) tools for integration with AI assistants
+type: module
+core_version_requirement: ^10.2 || ^11
+package: Web services
+dependencies:
+  - jsonrpc:jsonrpc (>= 3.0.0-beta1)

@@ -1,354 +1,375 @@
-# 🚀 GitHub Contrib Template
+# JSON-RPC MCP Bridge
 
-A GitHub repository template for creating Drupal contrib modules with comprehensive testing infrastructure, code quality tools, and AI-friendly development environment. Because writing boilerplate is so last century! ✨
+A Drupal module that exposes JSON-RPC method plugins as MCP (Model Context Protocol) tools, enabling seamless integration between Drupal and MCP-compatible AI assistants like Claude Desktop.
 
-## 🎯 Quick Start
+## Overview
 
-1. 🖱️ Click "Use this template" on GitHub to create a new repository
-2. 📥 Clone your new repository locally
-3. 🛠️ Follow the setup instructions below to customize for your module
+The Model Context Protocol (MCP) is an open standard introduced by Anthropic that enables AI systems to discover and interact with external tools and data sources. This module bridges Drupal's JSON-RPC infrastructure with MCP, allowing Drupal sites to be discovered and used as MCP servers.
 
-## Setup Instructions
+### Key Features
 
-After creating a repository from this template, follow these steps:
+- 🔌 **Automatic Tool Discovery**: Expose existing JSON-RPC methods as MCP tools using a simple PHP attribute
+- 📋 **MCP-Compliant Endpoints**: Provides `/mcp/tools/list` endpoint following MCP specification (2025-06-18)
+- 🔍 **Auto-Discovery Support**: Optional `/.well-known/mcp.json` endpoint for automatic server discovery
+- 🔐 **Security Built-in**: Inherits access control from JSON-RPC method permissions
+- 📊 **JSON Schema Validation**: Automatic conversion of JSON-RPC schemas to MCP inputSchema/outputSchema
 
-### 1. Rename Files and References
+## Requirements
 
-Replace all instances of `gh_contrib_template` with your actual module name:
+- Drupal 10.2+ or 11.x
+- PHP 8.1+
+- [JSON-RPC](https://www.drupal.org/project/jsonrpc) module (version 3.0.0-beta1 or higher)
 
-- Rename `gh_contrib_template.info.yml` to `your_module_name.info.yml`
-- Update module name references in all files
-- Update namespace references in PHP files
-- Update test class names and namespaces
+## How It Works
 
-### 2. Install Git Hooks
+### Architecture
 
-After cloning, install the pre-commit hooks that will automatically check code quality:
-
-```bash
-npm install  # Installs husky and other dependencies
+```
+Drupal JSON-RPC Method → #[McpTool] Attribute → MCP Tool Metadata → MCP Client (Claude, etc.)
 ```
 
-This sets up automatic git hooks for:
+The module uses PHP 8 attributes to mark JSON-RPC methods for MCP exposure. When an MCP client queries the discovery endpoint, the module:
 
-- **Pre-commit**: Code quality checks
-  - PHP coding standards (Drupal/DrupalPractice)
-  - PHPStan static analysis
-  - JavaScript/CSS linting
-  - Code formatting
-- **Commit-msg**: Enforces [Conventional Commits](https://www.conventionalcommits.org/) format
-  - Example: `feat: add user authentication`
-  - Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
-- **Pre-push**: Validates branch naming ([Lullabot ADR](https://architecture.lullabot.com/adr/20220920-git-branch-naming/))
-  - Format: `[ticket-id]--[description]`
-  - Examples: `DRUPAL-123--fix-menu-bug`, `NOTICKET--update-readme`
+1. Discovers all JSON-RPC methods marked with `#[McpTool]`
+2. Converts JSON-RPC metadata to MCP tool schema format
+3. Returns MCP-compliant tool definitions with proper JSON Schema
 
-### 3. Configure AI Assistant (Optional)
+### Metadata Mapping
 
-If you plan to use AI assistants for development:
+The module automatically maps JSON-RPC method metadata to MCP tool schema:
 
-- Rename `AGENTS.md` to match your preferred assistant (e.g., `CLAUDE.md`, `GEMINI.md`)
-- Rename `tests/e2e/AGENTS.md` to match your preferred assistant (e.g., `CLAUDE.md`, `GEMINI.md`)
-- Install the AI task manager:
+| JSON-RPC Field | MCP Field | Description |
+|----------------|-----------|-------------|
+| `id` | `name` | Unique tool identifier |
+| `usage` | `description` | Human-readable description |
+| `params` | `inputSchema` | JSON Schema for parameters |
+| `output` | `outputSchema` | JSON Schema for return value |
+| (via `#[McpTool]`) | `title` | Display name for the tool |
+| (via `#[McpTool]`) | `annotations` | MCP-specific metadata |
 
-```bash
-npx @e0ipso/ai-task-manager init --assistants claude,gemini,opencode
+## Usage
+
+### Marking Methods for MCP Exposure
+
+Add the `#[McpTool]` attribute to any JSON-RPC method class:
+
+```php
+<?php
+
+namespace Drupal\mymodule\Plugin\jsonrpc\Method;
+
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\jsonrpc\Attribute\JsonRpcMethod;
+use Drupal\jsonrpc\Attribute\JsonRpcParameterDefinition;
+use Drupal\jsonrpc_mcp\Attribute\McpTool;
+use Drupal\jsonrpc\Plugin\JsonRpcMethodBase;
+use Drupal\jsonrpc\JsonRpcObject\ParameterBag;
+
+#[JsonRpcMethod(
+  id: "cache.rebuild",
+  usage: new TranslatableMarkup("Rebuilds the Drupal system cache."),
+  access: ["administer site configuration"]
+)]
+#[McpTool(
+  title: "Rebuild Drupal Cache",
+  annotations: [
+    'category' => 'system',
+    'destructive' => false,
+  ]
+)]
+class CacheRebuild extends JsonRpcMethodBase {
+
+  public function execute(ParameterBag $params): bool {
+    drupal_flush_all_caches();
+    return true;
+  }
+
+  public static function outputSchema(): array {
+    return ['type' => 'boolean'];
+  }
+}
 ```
 
-### 4. Configure GitHub Actions Permissions
+### Example with Parameters
 
-<details>
-<summary>⚠️ <strong>Fix "Permission denied" errors in GitHub Actions</strong></summary>
+```php
+#[JsonRpcMethod(
+  id: "node.create",
+  usage: new TranslatableMarkup("Creates a new content node."),
+  access: ["create content"],
+  params: [
+    'title' => new JsonRpcParameterDefinition(
+      'title',
+      ["type" => "string"],
+      null,
+      new TranslatableMarkup("The node title"),
+      true
+    ),
+    'type' => new JsonRpcParameterDefinition(
+      'type',
+      ["type" => "string"],
+      null,
+      new TranslatableMarkup("The content type machine name"),
+      true
+    ),
+  ]
+)]
+#[McpTool(
+  title: "Create Content Node"
+)]
+class NodeCreate extends JsonRpcMethodBase {
+  // Implementation...
+}
+```
 
-#### Quick Fix
+This automatically generates the MCP tool schema:
 
-Go to your repository **Settings** → **Actions** → **General** → **Workflow permissions**:
+```json
+{
+  "name": "node.create",
+  "title": "Create Content Node",
+  "description": "Creates a new content node.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "description": "The node title"
+      },
+      "type": {
+        "type": "string",
+        "description": "The content type machine name"
+      }
+    },
+    "required": ["title", "type"]
+  }
+}
+```
 
-- Select **Read and write permissions**
-- Check **Allow GitHub Actions to create and approve pull requests**
-- Click **Save**
+## Discovery Endpoints
 
-#### Alternative: Personal Access Token
+### Primary: `/mcp/tools/list`
 
-1. Create a [Personal Access Token](https://github.com/settings/tokens/new?scopes=repo,workflow) with `repo` and `workflow` scopes
-2. Add it to your repository: **Settings** → **Secrets** → **Actions** → **New repository secret**
-   - Name: `GH_TOKEN`
-   - Value: Your token
-3. Update `.github/workflows/release.yml`:
-   ```yaml
-   env:
-     GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+MCP-compliant tool listing endpoint with pagination support:
+
+**Request:**
+```http
+GET /mcp/tools/list
+GET /mcp/tools/list?cursor=abc123
+```
+
+**Response:**
+```json
+{
+  "tools": [
+    {
+      "name": "cache.rebuild",
+      "title": "Rebuild Drupal Cache",
+      "description": "Rebuilds the Drupal system cache.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "outputSchema": {
+        "type": "boolean"
+      },
+      "annotations": {
+        "category": "system",
+        "destructive": false
+      }
+    }
+  ],
+  "nextCursor": null
+}
+```
+
+### Optional: `/.well-known/mcp.json`
+
+Discovery endpoint for automatic MCP server registration:
+
+**Request:**
+```http
+GET /.well-known/mcp.json
+```
+
+**Response:**
+```json
+{
+  "name": "Drupal MCP Server",
+  "version": "1.0.0",
+  "capabilities": {
+    "tools": true
+  },
+  "endpoints": {
+    "tools": "/mcp/tools/list"
+  }
+}
+```
+
+## MCP Client Integration
+
+### Claude Desktop
+
+Add your Drupal site to Claude Desktop's MCP configuration:
+
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+**Windows:** `%APPDATA%/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "drupal": {
+      "url": "https://your-drupal-site.com/mcp/tools/list",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_TOKEN"
+      }
+    }
+  }
+}
+```
+
+### Testing with MCP Inspector
+
+```bash
+npx @modelcontextprotocol/inspector https://your-drupal-site.com/mcp/tools/list
+```
+
+## Security Considerations
+
+### Access Control
+
+MCP tool access is controlled by the JSON-RPC method's `access` parameter:
+
+```php
+#[JsonRpcMethod(
+  id: "sensitive.operation",
+  usage: new TranslatableMarkup("Performs sensitive operation"),
+  access: ["administer site configuration", "access sensitive data"]
+)]
+```
+
+Users must have **all** specified permissions to access the tool via MCP.
+
+### Authentication
+
+MCP clients must authenticate using standard Drupal authentication methods:
+
+- **OAuth 2.0**: Recommended for production (requires contrib module)
+- **Basic Auth**: For development/testing only
+- **Session Cookies**: For same-domain requests
+
+### Best Practices
+
+1. **Principle of Least Privilege**: Only expose necessary methods via `#[McpTool]`
+2. **Input Validation**: Always validate parameters in your method implementation
+3. **Rate Limiting**: Consider rate limiting for MCP endpoints
+4. **Audit Logging**: Log MCP tool invocations for security monitoring
+
+## Standards Compliance
+
+### MCP Specification
+
+This module implements the Model Context Protocol specification version **2025-06-18**:
+
+- ✅ `tools/list` endpoint with pagination
+- ✅ JSON Schema for `inputSchema` and `outputSchema`
+- ✅ Required fields: `name`, `description`, `inputSchema`
+- ✅ Optional fields: `title`, `outputSchema`, `annotations`
+
+### JSON Schema
+
+All parameter and output schemas use JSON Schema Draft 7 format, ensuring compatibility with:
+
+- MCP clients (Claude Desktop, etc.)
+- OpenAPI/Swagger tools
+- Schema validation libraries
+
+### OAuth 2.0 Authorization
+
+MCP clients can discover authorization endpoints via standard `.well-known` URIs:
+
+- `/.well-known/oauth-authorization-server`
+- `/.well-known/openid-configuration`
+
+## Development
+
+### Creating Custom MCP Tools
+
+1. **Create a JSON-RPC Method Plugin**
+   ```bash
+   mkdir -p src/Plugin/jsonrpc/Method
    ```
 
-#### Best Practice: Service Accounts
+2. **Add the Method Class**
+   ```php
+   namespace Drupal\mymodule\Plugin\jsonrpc\Method;
 
-For team projects, use a dedicated bot account ([Lullabot ADR reference](https://architecture.lullabot.com/adr/20220426-use-dedicated-accounts-service-integrations/)):
+   use Drupal\jsonrpc\Attribute\JsonRpcMethod;
+   use Drupal\jsonrpc_mcp\Attribute\McpTool;
+   // ... implementation
+   ```
 
-- Create a bot GitHub account (e.g., `your-project-bot`)
-- Add it as a collaborator with write permissions
-- Use its PAT for automated workflows
-- Benefits: Not tied to personal accounts, easier rotation, clear audit trail
+3. **Clear Cache**
+   ```bash
+   drush cache:rebuild
+   ```
 
-</details>
+4. **Verify Discovery**
+   ```bash
+   curl https://your-site.com/mcp/tools/list | jq '.tools[] | select(.name == "your.method")'
+   ```
 
-### 5. Update Module Information
-
-- Edit the `.info.yml` file with your module's details
-- Update `composer.json` with your module's metadata
-- Customize the module description and dependencies
-
-> **Note**: This template is designed for modules hosted on GitHub with `vendor/module-name` namespacing (e.g., `lullabot/my-module`). For Drupal.org contrib modules requiring `drupal/module-name` namespacing, you can use GitHub Actions to mirror your repository to GitLab whenever new tags are created.
-
-<details>
-<summary><strong>📦 Publish to Packagist for Composer Installation</strong></summary>
-
-To enable `composer require vendor/module-name` installation:
-
-1. **Ensure your `composer.json` is properly configured** with:
-
-- Correct `name` field (e.g., `"lullabot/my-module"`)
-- `type: "drupal-module"`
-- Proper `description` and `keywords`
-
-2. **Submit to Packagist**:
-
-- Visit [packagist.org](https://packagist.org)
-- Click "Submit" and enter your GitHub repository URL
-- Packagist will automatically sync with your repository
-
-3. **Enable auto-updating**:
-
-- Go to your package page on Packagist
-- Click "Settings" → "GitHub Service Hook"
-- This ensures new releases are automatically published
-
-After submission, users can install your module with:
+### Testing
 
 ```bash
-composer require vendor/module-name
+# Run PHPUnit tests
+vendor/bin/phpunit --group jsonrpc_mcp
+
+# Test MCP endpoint
+curl -X GET https://your-site.com/mcp/tools/list \
+  -H "Accept: application/json"
 ```
 
-**Note**: With semantic release enabled, your tags and releases are automatically created when you merge PRs with conventional commit messages (feat, fix, etc.).
+## Roadmap
 
-</details>
+- [ ] Implement `#[McpTool]` PHP attribute
+- [ ] Create MCP tool discovery service
+- [ ] Build `/mcp/tools/list` controller
+- [ ] Add MCP tool normalizer
+- [ ] Implement `/.well-known/mcp.json` endpoint
+- [ ] Add comprehensive test coverage
+- [ ] Support for MCP resources (beyond tools)
+- [ ] Support for MCP prompts
+- [ ] WebSocket transport for real-time updates
+- [ ] MCP Registry integration
 
-<details>
-<summary><strong>🔄 Mirror to Drupal.org for Official Contrib</strong></summary>
+## Contributing
 
-For official Drupal.org contrib modules requiring `drupal/module-name` namespacing, you can maintain your GitHub workflow while mirroring to GitLab:
-
-**Overview**: Use GitHub Actions to automatically push new tags to your Drupal.org project repository at `https://git.drupalcode.org/project/module_name`.
-
-**Requirements**:
-
-- Approved Drupal.org project page
-- SSH key or personal access token for GitLab authentication
-- GitHub Action that triggers on new releases/tags
-
-```mermaid
-gitGraph:
-    commit id: "Initial commit"
-    branch github
-    checkout github
-    commit id: "feat: add feature"
-    commit id: "fix: bug fix"
-    checkout main
-    merge github
-    commit id: "v1.1.0 (auto-tag)" tag: "v1.1.0"
-
-    %% Mirror action
-    branch drupal-mirror
-    checkout drupal-mirror
-    commit id: "Mirror to GitLab"
-    checkout main
-```
-
-**Process Flow**:
-
-1. **GitHub**: Developer workflow with PRs and semantic commits
-2. **Auto-release**: Semantic Release creates tags automatically
-3. **Mirror Action**: GitHub Action pushes code to `git.drupalcode.org`
-4. **Manual Step**: Create release on Drupal.org project page using the mirrored tag
-
-**Note**: While code mirroring can be automated, Drupal.org releases must be manually created through the project interface to generate the `drupal/module-name` Composer package.
-
-</details>
-
-### 6. Clean Up Example Files
-
-- Delete `dummy.css` and `dummy.js` files - these are only included to demonstrate that the linting and code quality checks work correctly
-- These files serve no functional purpose and should be removed once you've verified the linting works
-
-## 🎁 Features Included
-
-### 🧪 Testing Infrastructure
-
-- **PHPUnit Test Suites**: Unit, Kernel, Functional, and FunctionalJavaScript tests
-- **Trivial Test Examples**: Ready-to-adapt test templates for all test types
-- **GitHub CI/CD**: Automated testing on pull requests and pushes
-- **E2E Testing**: Playwright configuration for end-to-end testing
-
-### 🔍 Code Quality Tools
-
-- **PHPStan**: Static analysis configuration (`phpstan.neon`)
-- **ESLint**: JavaScript linting (`.eslintrc.json`)
-- **Prettier**: Code formatting (`.prettierrc.json`)
-- **Pre-commit Hooks**: Automated code quality checks
-
-### 🔧 Development Tools
-
-- **GitHub Actions Workflows**:
-  - `test.yml`: Comprehensive testing pipeline
-  - `release.yml`: Release automation
-- **Git Hooks**: Automated pre-commit checks via Husky
-- **Node.js Integration**: Package management and frontend tooling
-- **Git Configuration**: Proper `.gitignore` files for Drupal modules
-
-### 🤖 AI-Friendly Configuration
-
-- **AGENTS.md**: Instructions for AI assistants working on the project
-- **Structured Documentation**: Clear patterns for AI to follow
-- **Task Management Integration**: Ready for AI task orchestration
-
-## 🧪 Testing
-
-The template includes comprehensive testing infrastructure that'll make your tests run smoother than a freshly cached Drupal site! 🏃‍♂️
-
-### PHPUnit Tests
+This module follows Drupal coding standards and best practices:
 
 ```bash
-# Run all tests
-vendor/bin/phpunit
+# Check coding standards
+vendor/bin/phpcs --standard=Drupal,DrupalPractice
 
-# Run specific test suites
-vendor/bin/phpunit --testsuite=unit
-vendor/bin/phpunit --testsuite=kernel
-vendor/bin/phpunit --testsuite=functional
-vendor/bin/phpunit --testsuite=functional-javascript
-```
+# Fix coding standards
+vendor/bin/phpcbf --standard=Drupal,DrupalPractice
 
-### Code Quality Checks
-
-```bash
-# Static analysis (let PHPStan judge your code so your colleagues don't have to)
+# Static analysis
 vendor/bin/phpstan analyze
-
-# Coding standards checks and fixes (because consistency is key 🔑)
-composer run-script lint:check    # Check coding standards with PHPCS
-composer run-script lint:fix      # Fix coding standards with PHPCBF
-
-# JavaScript linting
-npm run lint
-
-# Code formatting
-npm run format
 ```
 
-### E2E Testing
+## Resources
 
-<details>
-<summary><strong>📦 E2E Dependencies Installation</strong></summary>
+- [Model Context Protocol Specification](https://modelcontextprotocol.io/specification/2025-06-18)
+- [MCP Documentation](https://docs.claude.com/en/docs/mcp)
+- [JSON-RPC Module](https://www.drupal.org/project/jsonrpc)
+- [MCP GitHub Repository](https://github.com/modelcontextprotocol)
 
-#### Prerequisites
+## License
 
-- **Node.js**: Version 18.0.0 or higher
-- **npm**: Installed with Node.js
-- **Drupal Environment**: Running Drupal instance (local or remote)
+GPL-2.0-or-later
 
-#### Step-by-Step Installation
+## Maintainers
 
-1. **Install Node.js Dependencies**
-
-   ```bash
-   # Install all npm dependencies (includes Playwright)
-   npm ci
-   ```
-
-2. **Install Playwright Browsers**
-
-   ```bash
-   # Download and install browser binaries (Chromium, Firefox, WebKit)
-   npm run e2e:install
-   ```
-
-   This command downloads approximately 300MB of browser binaries and may take a few minutes on first run.
-
-3. **Verify Installation**
-
-   ```bash
-   # Check Playwright installation
-   npx playwright --version
-
-   # List installed browsers
-   npx playwright install --dry-run
-   ```
-
-#### Troubleshooting Installation
-
-**Permission Issues on Linux/macOS:**
-
-```bash
-sudo npx playwright install-deps
-```
-
-**Network/Firewall Issues:**
-
-```bash
-# Use alternative download method
-PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci
-npx playwright install chromium
-```
-
-**Disk Space Issues:**
-
-- Playwright browsers require ~1GB disk space
-- Use `npx playwright install chromium` to install only Chromium (smallest footprint)
-
-</details>
-
-#### Running Tests
-
-```bash
-# Run all tests
-npm run e2e:test
-
-# Run with browser UI (for debugging)
-npm run e2e:test:headed
-
-# Run in debug mode with step-by-step execution
-npm run e2e:test:debug
-
-# View test reports
-npm run e2e:report
-```
-
-## 📁 Directory Structure
-
-```
-your_module_name/
-├── .github/workflows/          # CI/CD pipelines
-├── .claude/                   # AI assistant configuration
-├── src/                       # PHP source code
-├── tests/
-│   ├── src/                   # PHPUnit tests
-│   └── e2e/                   # Playwright E2E tests
-├── config/                    # Configuration files
-├── AGENTS.md                  # AI assistant instructions
-├── composer.json              # PHP dependencies
-├── package.json               # Node.js dependencies
-├── phpstan.neon              # Static analysis config
-└── your_module_name.info.yml  # Drupal module info
-```
-
-## ⚙️ GitHub Actions Integration
-
-The template includes three main workflows:
-
-- **Test Pipeline**: Runs on every PR and push, executing all test suites
-- **AI Integration**: Supports AI-assisted development workflows
-- **Release Automation**: Handles versioning and releases (see step 3 in setup for permissions)
-
-<details>
-<summary>Troubleshooting</summary>
-If the <code>Tag</code> action for the semantic release job is failing because of missing GitHub permissions, then navigate to "Settings" → "Actions" → "General" → "Workflow permissions" and check <em>Read and write permissions</em> and <em>Allow GitHub Actions to create and approve pull requests</em>.
-</details>
+- Your Name - [your-drupal-username](https://www.drupal.org/u/your-drupal-username)

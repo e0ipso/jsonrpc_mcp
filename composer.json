@@ -1,14 +1,19 @@
 {
-  "name": "example/gh_contrib_template",
-  "description": "A comprehensive Drupal module template with development infrastructure",
+  "name": "drupal/jsonrpc_mcp",
+  "description": "Exposes Drupal JSON-RPC method plugins as MCP (Model Context Protocol) tools, enabling integration with AI assistants like Claude Desktop",
   "type": "drupal-module",
   "license": "GPL-2.0-or-later",
   "authors": [
     {
-      "name": "Template Author",
-      "email": "template@example.com"
+      "name": "Mateu Aguiló Bosch",
+      "email": "mateu.aguilo.bosch@gmail.com"
     }
   ],
+  "require": {
+    "php": ">=8.1",
+    "drupal/core": "^10.2 || ^11",
+    "drupal/jsonrpc": "^3.0.0-beta1"
+  },
   "require-dev": {
     "drupal/coder": "^8",
     "phpstan/phpstan": "^2.1",
