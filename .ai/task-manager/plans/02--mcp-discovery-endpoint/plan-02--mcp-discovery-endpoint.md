@@ -544,14 +544,14 @@ graph TD
 - ✔️ Task 002: Implement McpToolNormalizer
 - ✔️ Task 009: Create Test Plugin in jsonrpc_mcp_test Module
 
-### Phase 2: Integration
+### ✅ Phase 2: Integration
 
 **Parallel Tasks:**
 
-- Task 003: Create McpToolsController (depends on: 001, 002)
-- Task 004: Define Services in jsonrpc_mcp.services.yml (depends on: 001, 002)
-- Task 006: Create Unit Tests for McpToolNormalizer (depends on: 002)
-- Task 007: Create Kernel Tests for McpToolDiscoveryService (depends on: 001, 009)
+- ✔️ Task 003: Create McpToolsController (depends on: 001, 002)
+- ✔️ Task 004: Define Services in jsonrpc_mcp.services.yml (depends on: 001, 002)
+- ✔️ Task 006: Create Unit Tests for McpToolNormalizer (depends on: 002)
+- ✔️ Task 007: Create Kernel Tests for McpToolDiscoveryService (depends on: 001, 009)
 
 ### Phase 3: Routing and HTTP Testing
 

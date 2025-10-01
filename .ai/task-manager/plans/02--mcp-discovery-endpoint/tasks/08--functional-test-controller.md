@@ -2,8 +2,9 @@
 id: 8
 group: 'mcp-discovery-endpoint'
 dependencies: [3, 5, 9]
-status: 'pending'
+status: 'completed'
 created: '2025-10-01'
+completed: '2025-10-01'
 'skills: ['drupal-functional-testing', 'http-testing']
 ---
 

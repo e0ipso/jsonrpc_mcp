@@ -2,7 +2,7 @@
 id: 5
 group: 'mcp-discovery-endpoint'
 dependencies: [3]
-status: 'pending'
+status: 'completed'
 created: '2025-10-01'
 'skills: ['drupal-routing']
 ---

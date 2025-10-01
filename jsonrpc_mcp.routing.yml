@@ -1,0 +1,9 @@
+jsonrpc_mcp.tools_list:
+  path: '/mcp/tools/list'
+  defaults:
+    _controller: '\Drupal\jsonrpc_mcp\Controller\McpToolsController::list'
+    _title: 'MCP Tools Discovery'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: 'TRUE'
