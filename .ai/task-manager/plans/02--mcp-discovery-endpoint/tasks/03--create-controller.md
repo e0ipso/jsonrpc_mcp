@@ -2,7 +2,7 @@
 id: 3
 group: 'mcp-discovery-endpoint'
 dependencies: [1, 2]
-status: 'pending'
+status: 'completed'
 created: '2025-10-01'
 'skills: ['drupal-controller', 'symfony-http']
 ---

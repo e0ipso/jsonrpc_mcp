@@ -1,1 +1,7 @@
-services: {}
+services:
+  jsonrpc_mcp.tool_discovery:
+    class: Drupal\jsonrpc_mcp\Service\McpToolDiscoveryService
+    arguments: ['@jsonrpc.handler', '@current_user']
+
+  jsonrpc_mcp.tool_normalizer:
+    class: Drupal\jsonrpc_mcp\Normalizer\McpToolNormalizer

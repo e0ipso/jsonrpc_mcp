@@ -16,7 +16,7 @@ class TrivialKernelTrivialTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  protected static $modules = ['jsonrpc_mcp'];
+  protected static $modules = ['system', 'user', 'jsonrpc', 'jsonrpc_mcp'];
 
   /**
    * Tests that kernel tests can run.

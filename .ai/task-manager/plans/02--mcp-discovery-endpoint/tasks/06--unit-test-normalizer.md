@@ -2,7 +2,7 @@
 id: 6
 group: 'mcp-discovery-endpoint'
 dependencies: [2]
-status: 'pending'
+status: 'completed'
 created: '2025-10-01'
 'skills: ['phpunit', 'test-doubles']
 ---
