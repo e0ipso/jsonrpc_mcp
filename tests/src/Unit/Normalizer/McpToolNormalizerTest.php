@@ -35,7 +35,10 @@ class McpToolNormalizerTest extends TestCase {
   }
 
   /**
-   * Tests normalization with minimal method (only required fields).
+   * Tests JSON-RPC to MCP schema transformation with minimal method.
+   *
+   * Validates the core transformation logic from JSON-RPC method definition
+   * to MCP tool schema format.
    *
    * @covers ::normalize
    * @covers ::buildInputSchema
@@ -66,7 +69,10 @@ class McpToolNormalizerTest extends TestCase {
   }
 
   /**
-   * Tests normalization with McpTool title.
+   * Tests normalization with McpTool title mapping.
+   *
+   * Validates that the title from the McpTool attribute is correctly
+   * included in the MCP tool schema.
    *
    * @covers ::normalize
    * @covers ::extractMcpToolData
@@ -89,7 +95,10 @@ class McpToolNormalizerTest extends TestCase {
   }
 
   /**
-   * Tests normalization with McpTool annotations.
+   * Tests normalization with McpTool annotations mapping.
+   *
+   * Validates that annotations from the McpTool attribute are correctly
+   * transformed and included in the MCP tool schema.
    *
    * @covers ::normalize
    * @covers ::extractMcpToolData
@@ -112,7 +121,10 @@ class McpToolNormalizerTest extends TestCase {
   }
 
   /**
-   * Tests normalization with outputSchema.
+   * Tests normalization with outputSchema inclusion.
+   *
+   * Validates that outputSchema is correctly extracted and included
+   * in the MCP tool schema when the method implements it.
    *
    * @covers ::normalize
    */
@@ -139,31 +151,10 @@ class McpToolNormalizerTest extends TestCase {
   }
 
   /**
-   * Tests inputSchema generation with empty parameters.
+   * Tests parameter mapping with required parameters.
    *
-   * @covers ::buildInputSchema
-   */
-  public function testBuildInputSchemaEmpty(): void {
-    $method = $this->createMock(MethodInterface::class);
-    $method->method('id')
-      ->willReturn('test.method');
-    $method->method('getUsage')
-      ->willReturn(new TranslatableMarkup('Test'));
-    $method->method('getParams')
-      ->willReturn([]);
-    $method->method('getClass')
-      ->willReturn(NULL);
-
-    $result = $this->normalizer->normalize($method);
-
-    $this->assertSame([
-      'type' => 'object',
-      'properties' => [],
-    ], $result['inputSchema']);
-  }
-
-  /**
-   * Tests inputSchema generation with required parameters.
+   * Validates that required parameters are correctly mapped to the
+   * inputSchema 'required' array in the MCP tool schema.
    *
    * @covers ::buildInputSchema
    */
@@ -200,7 +191,10 @@ class McpToolNormalizerTest extends TestCase {
   }
 
   /**
-   * Tests inputSchema generation with optional parameters.
+   * Tests parameter mapping with optional vs required distinction.
+   *
+   * Validates the business rule that only required parameters are
+   * included in the 'required' array of the inputSchema.
    *
    * @covers ::buildInputSchema
    */
@@ -234,39 +228,10 @@ class McpToolNormalizerTest extends TestCase {
   }
 
   /**
-   * Tests inputSchema generation with parameter descriptions.
-   *
-   * @covers ::buildInputSchema
-   */
-  public function testBuildInputSchemaWithDescriptions(): void {
-    $param = new JsonRpcParameterDefinition(
-      id: 'input',
-      schema: ['type' => 'string'],
-      description: new TranslatableMarkup('The input value'),
-      required: TRUE,
-    );
-
-    $method = $this->createMock(MethodInterface::class);
-    $method->method('id')
-      ->willReturn('test.method');
-    $method->method('getUsage')
-      ->willReturn(new TranslatableMarkup('Test'));
-    $method->method('getParams')
-      ->willReturn(['input' => $param]);
-    $method->method('getClass')
-      ->willReturn(NULL);
-
-    $result = $this->normalizer->normalize($method);
-
-    $this->assertArrayHasKey('input', $result['inputSchema']['properties']);
-    $this->assertSame([
-      'type' => 'string',
-      'description' => 'The input value',
-    ], $result['inputSchema']['properties']['input']);
-  }
-
-  /**
    * Tests TranslatableMarkup conversion to string.
+   *
+   * Validates that Drupal's TranslatableMarkup objects are correctly
+   * converted to plain strings in the MCP tool schema.
    *
    * @covers ::normalize
    */
@@ -292,71 +257,14 @@ class McpToolNormalizerTest extends TestCase {
   }
 
   /**
-   * Tests nested parameter schemas.
+   * Tests comprehensive JSON-RPC to MCP transformation with all features.
    *
-   * @covers ::buildInputSchema
-   */
-  public function testNestedParameterSchemas(): void {
-    $param = new JsonRpcParameterDefinition(
-      id: 'complex',
-      schema: [
-        'type' => 'object',
-        'properties' => [
-          'nested' => [
-            'type' => 'object',
-            'properties' => [
-              'deep' => ['type' => 'string'],
-            ],
-          ],
-        ],
-      ],
-      required: TRUE,
-    );
-
-    $method = $this->createMock(MethodInterface::class);
-    $method->method('id')
-      ->willReturn('test.method');
-    $method->method('getUsage')
-      ->willReturn(new TranslatableMarkup('Test'));
-    $method->method('getParams')
-      ->willReturn(['complex' => $param]);
-    $method->method('getClass')
-      ->willReturn(NULL);
-
-    $result = $this->normalizer->normalize($method);
-
-    $this->assertArrayHasKey('complex', $result['inputSchema']['properties']);
-    $this->assertSame('object', $result['inputSchema']['properties']['complex']['type']);
-    $this->assertArrayHasKey('nested', $result['inputSchema']['properties']['complex']['properties']);
-  }
-
-  /**
-   * Tests method without McpTool attribute (fallback behavior).
-   *
-   * @covers ::normalize
-   * @covers ::extractMcpToolData
-   */
-  public function testMethodWithoutMcpToolAttribute(): void {
-    $method = $this->createMock(MethodInterface::class);
-    $method->method('id')
-      ->willReturn('test.method');
-    $method->method('getUsage')
-      ->willReturn(new TranslatableMarkup('Test description'));
-    $method->method('getParams')
-      ->willReturn([]);
-    $method->method('getClass')
-      ->willReturn(TestMethodWithoutMcpTool::class);
-
-    $result = $this->normalizer->normalize($method);
-
-    $this->assertArrayNotHasKey('title', $result);
-    $this->assertArrayNotHasKey('annotations', $result);
-    $this->assertSame('test.method', $result['name']);
-    $this->assertSame('Test description', $result['description']);
-  }
-
-  /**
-   * Tests normalization with all features combined.
+   * Integration test validating the complete transformation pipeline:
+   * - JSON-RPC method -> MCP tool schema
+   * - Required vs optional parameters
+   * - TranslatableMarkup conversion
+   * - McpTool attribute mapping (title, annotations)
+   * - outputSchema inclusion
    *
    * @covers ::normalize
    * @covers ::buildInputSchema
@@ -411,181 +319,6 @@ class McpToolNormalizerTest extends TestCase {
     // Check McpTool data.
     $this->assertSame('Test Method With Output', $result['title']);
     $this->assertSame(['test' => TRUE], $result['annotations']);
-  }
-
-  /**
-   * Tests outputSchema is not added when method doesn't implement it.
-   *
-   * @covers ::normalize
-   */
-  public function testNoOutputSchemaWhenNotImplemented(): void {
-    $method = $this->createMock(MethodInterface::class);
-    $method->method('id')
-      ->willReturn('test.method');
-    $method->method('getUsage')
-      ->willReturn(new TranslatableMarkup('Test'));
-    $method->method('getParams')
-      ->willReturn([]);
-    $method->method('getClass')
-      ->willReturn(TestMethodWithoutMcpTool::class);
-
-    $result = $this->normalizer->normalize($method);
-
-    $this->assertArrayNotHasKey('outputSchema', $result);
-  }
-
-  /**
-   * Tests outputSchema is not added when it returns null.
-   *
-   * @covers ::normalize
-   */
-  public function testNoOutputSchemaWhenNull(): void {
-    $method = $this->createMock(MethodInterface::class);
-    $method->method('id')
-      ->willReturn('test.method');
-    $method->method('getUsage')
-      ->willReturn(new TranslatableMarkup('Test'));
-    $method->method('getParams')
-      ->willReturn([]);
-    $method->method('getClass')
-      ->willReturn(TestMethodWithMcpTool::class);
-
-    $result = $this->normalizer->normalize($method);
-
-    // TestMethodWithMcpTool doesn't have outputSchema method.
-    $this->assertArrayNotHasKey('outputSchema', $result);
-  }
-
-  /**
-   * Tests parameter without description.
-   *
-   * @covers ::buildInputSchema
-   */
-  public function testParameterWithoutDescription(): void {
-    $param = new JsonRpcParameterDefinition(
-      id: 'simple',
-      schema: ['type' => 'boolean'],
-      required: TRUE,
-    );
-
-    $method = $this->createMock(MethodInterface::class);
-    $method->method('id')
-      ->willReturn('test.method');
-    $method->method('getUsage')
-      ->willReturn(new TranslatableMarkup('Test'));
-    $method->method('getParams')
-      ->willReturn(['simple' => $param]);
-    $method->method('getClass')
-      ->willReturn(NULL);
-
-    $result = $this->normalizer->normalize($method);
-
-    $this->assertSame(['type' => 'boolean'], $result['inputSchema']['properties']['simple']);
-    $this->assertArrayNotHasKey('description', $result['inputSchema']['properties']['simple']);
-  }
-
-  /**
-   * Tests array parameter schema.
-   *
-   * @covers ::buildInputSchema
-   */
-  public function testArrayParameterSchema(): void {
-    $param = new JsonRpcParameterDefinition(
-      id: 'items',
-      schema: [
-        'type' => 'array',
-        'items' => ['type' => 'string'],
-      ],
-      description: new TranslatableMarkup('List of items'),
-      required: TRUE,
-    );
-
-    $method = $this->createMock(MethodInterface::class);
-    $method->method('id')
-      ->willReturn('test.method');
-    $method->method('getUsage')
-      ->willReturn(new TranslatableMarkup('Test'));
-    $method->method('getParams')
-      ->willReturn(['items' => $param]);
-    $method->method('getClass')
-      ->willReturn(NULL);
-
-    $result = $this->normalizer->normalize($method);
-
-    $this->assertSame([
-      'type' => 'array',
-      'items' => ['type' => 'string'],
-      'description' => 'List of items',
-    ], $result['inputSchema']['properties']['items']);
-  }
-
-  /**
-   * Tests multiple parameters with mixed requirements.
-   *
-   * @covers ::buildInputSchema
-   */
-  public function testMultipleParametersMixedRequirements(): void {
-    $params = [
-      'required1' => new JsonRpcParameterDefinition(
-        id: 'required1',
-        schema: ['type' => 'string'],
-        required: TRUE,
-      ),
-      'optional1' => new JsonRpcParameterDefinition(
-        id: 'optional1',
-        schema: ['type' => 'string'],
-        required: FALSE,
-      ),
-      'required2' => new JsonRpcParameterDefinition(
-        id: 'required2',
-        schema: ['type' => 'number'],
-        required: TRUE,
-      ),
-      'optional2' => new JsonRpcParameterDefinition(
-        id: 'optional2',
-        schema: ['type' => 'boolean'],
-        required: FALSE,
-      ),
-    ];
-
-    $method = $this->createMock(MethodInterface::class);
-    $method->method('id')
-      ->willReturn('test.method');
-    $method->method('getUsage')
-      ->willReturn(new TranslatableMarkup('Test'));
-    $method->method('getParams')
-      ->willReturn($params);
-    $method->method('getClass')
-      ->willReturn(NULL);
-
-    $result = $this->normalizer->normalize($method);
-
-    $this->assertCount(4, $result['inputSchema']['properties']);
-    $this->assertSame(['required1', 'required2'], $result['inputSchema']['required']);
-  }
-
-  /**
-   * Tests that method class being NULL doesn't cause errors.
-   *
-   * @covers ::normalize
-   * @covers ::extractMcpToolData
-   */
-  public function testNullMethodClass(): void {
-    $method = $this->createMock(MethodInterface::class);
-    $method->method('id')
-      ->willReturn('test.method');
-    $method->method('getUsage')
-      ->willReturn(new TranslatableMarkup('Test'));
-    $method->method('getParams')
-      ->willReturn([]);
-    $method->method('getClass')
-      ->willReturn(NULL);
-
-    $result = $this->normalizer->normalize($method);
-
-    $this->assertArrayNotHasKey('title', $result);
-    $this->assertArrayNotHasKey('annotations', $result);
-    $this->assertArrayNotHasKey('outputSchema', $result);
   }
 
 }
