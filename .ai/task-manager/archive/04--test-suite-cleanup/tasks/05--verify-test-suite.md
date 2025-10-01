@@ -2,7 +2,7 @@
 id: 5
 group: 'test-cleanup'
 dependencies: [1, 2, 3, 4]
-status: 'pending'
+status: 'completed'
 created: '2025-10-01'
 skills:
   - phpunit
