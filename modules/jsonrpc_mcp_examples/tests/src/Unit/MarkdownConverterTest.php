@@ -1,69 +1,3 @@
----
-id: 6
-group: 'testing'
-dependencies: [2]
-status: 'completed'
-created: '2025-10-01'
-skills: ['php', 'phpunit']
----
-
-# Create Unit Tests for Markdown Conversion
-
-## Objective
-
-Write focused unit tests for the markdown conversion logic in ArticleToMarkdown, testing HTML stripping and paragraph separation in isolation without Drupal bootstrap.
-
-## Skills Required
-
-- `php`: Regular expressions, string manipulation
-- `phpunit`: Unit testing, mocking, test isolation
-
-## Acceptance Criteria
-
-- [ ] `MarkdownConverterTest.php` unit test class created
-- [ ] Test covers basic HTML paragraph conversion to double newlines
-- [ ] Test covers HTML tag stripping
-- [ ] Test covers edge cases: empty body, no paragraphs, nested HTML
-- [ ] Test uses mocked NodeInterface (no database dependencies)
-- [ ] All tests pass with `vendor/bin/phpunit --testsuite=unit`
-
-## Technical Requirements
-
-- Test class: `tests/src/Unit/MarkdownConverterTest.php`
-- Namespace: `Drupal\Tests\jsonrpc_mcp_examples\Unit`
-- Extends: `UnitTestCase`
-- Uses reflection or public method extraction to test conversion logic
-- Group annotation: `@group jsonrpc_mcp_examples`
-
-## Input Dependencies
-
-- Task 2: ArticleToMarkdown implementation (specifically the convertToMarkdown method)
-
-## Output Artifacts
-
-- `modules/jsonrpc_mcp_examples/tests/src/Unit/MarkdownConverterTest.php`
-
-<details>
-<summary>Implementation Notes</summary>
-
-### Meaningful Test Strategy Guidelines
-
-Your critical mantra for test generation is: "write a few tests, mostly integration".
-
-**Focus on:**
-
-- Custom markdown conversion logic (our code)
-- Edge cases in HTML parsing (empty strings, nested tags, malformed HTML)
-- Paragraph separation logic (double newlines)
-
-**Avoid testing:**
-
-- PHP's built-in strip_tags() function (already tested by PHP)
-- PHP's preg_replace() function (framework functionality)
-
-### Test Class Structure
-
-```php
 <?php
 
 declare(strict_types=1);
@@ -171,8 +105,10 @@ class MarkdownConverterTest extends UnitTestCase {
    * Creates a mock node with title and body.
    */
   protected function createMockNode(string $title, string $body): NodeInterface {
-    $bodyField = $this->createMock(\Drupal\Core\Field\FieldItemListInterface::class);
-    $bodyField->value = $body;
+    // Use an anonymous class to create a field object with a public value property.
+    $bodyField = new class($body) {
+      public function __construct(public mixed $value) {}
+    };
 
     $node = $this->createMock(NodeInterface::class);
     $node->method('getTitle')->willReturn($title);
@@ -187,8 +123,16 @@ class MarkdownConverterTest extends UnitTestCase {
   protected function createMethod(): ArticleToMarkdown {
     $entityTypeManager = $this->createMock(\Drupal\Core\Entity\EntityTypeManagerInterface::class);
 
+    // Create a mock Request object required by JsonRpcMethodBase.
+    $request = $this->createMock(\Drupal\jsonrpc\JsonRpcObject\Request::class);
+
+    // Configuration must include the jsonrpc_request key.
+    $configuration = [
+      'jsonrpc_request' => $request,
+    ];
+
     return new ArticleToMarkdown(
-      [],
+      $configuration,
       'examples.article.toMarkdown',
       $this->createMock(\Drupal\jsonrpc\MethodInterface::class),
       $entityTypeManager
@@ -207,32 +151,3 @@ class MarkdownConverterTest extends UnitTestCase {
   }
 
 }
-```
-
-### Key Testing Points
-
-1. **Mocking**: Create mock NodeInterface without database dependencies
-2. **Reflection**: Use ReflectionClass to access protected convertToMarkdown method
-3. **Edge Cases**:
-   - Empty body
-   - Body without paragraph tags
-   - Nested HTML elements
-   - Paragraph tags with attributes
-4. **Assertions**: Verify exact markdown output including double newlines
-5. **Isolation**: No Drupal bootstrap, pure PHP unit tests
-
-### Running Tests
-
-```bash
-# Run all unit tests
-vendor/bin/phpunit --testsuite=unit
-
-# Run this specific test
-vendor/bin/phpunit modules/jsonrpc_mcp_examples/tests/src/Unit/MarkdownConverterTest.php
-```
-
-### Alternative Approach: Extract Logic
-
-If reflection feels cumbersome, consider extracting the conversion logic to a standalone service or trait that can be tested directly without reflection. This would be a future refactoring opportunity.
-
-</details>

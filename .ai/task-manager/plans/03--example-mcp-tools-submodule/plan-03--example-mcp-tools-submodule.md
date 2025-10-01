@@ -270,13 +270,13 @@ graph TD
 
 - ✔️ Task 001: Create jsonrpc_mcp_examples Submodule Structure [completed]
 
-### Phase 2: Method Implementation
+### ✅ Phase 2: Method Implementation
 
 **Parallel Tasks:**
 
-- Task 002: Implement ArticleToMarkdown JSON-RPC Method (depends on: 001)
-- Task 003: Implement ListContentTypes JSON-RPC Method (depends on: 001)
-- Task 004: Implement ListArticles JSON-RPC Method (depends on: 001)
+- ✔️ Task 002: Implement ArticleToMarkdown JSON-RPC Method [completed] (depends on: 001)
+- ✔️ Task 003: Implement ListContentTypes JSON-RPC Method [completed] (depends on: 001)
+- ✔️ Task 004: Implement ListArticles JSON-RPC Method [completed] (depends on: 001)
 
 ### Phase 3: Testing
 
