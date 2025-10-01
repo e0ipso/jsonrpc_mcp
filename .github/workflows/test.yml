@@ -85,7 +85,7 @@ jobs:
           composer config platform.php ${{ matrix.php-version }}
 
           composer require --no-interaction \
-            drupal/core-dev:^{{ matrix.drupal-core }} \
+            drupal/core-dev:^${{ matrix.drupal-core }} \
             drupal/coder \
             drush/drush \
             phpstan/phpstan \
