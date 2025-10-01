@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\jsonrpc_mcp_examples\Unit;
 
+use Drupal\jsonrpc\JsonRpcObject\Request;
+use Drupal\jsonrpc\MethodInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\jsonrpc\JsonRpcObject\ParameterBag;
@@ -88,7 +90,6 @@ class ArticleToMarkdownTest extends UnitTestCase {
     $this->assertStringContainsString("First paragraph.\n\nSecond paragraph.", $result);
   }
 
-
   /**
    * Tests complex HTML stripping.
    *
@@ -131,14 +132,14 @@ class ArticleToMarkdownTest extends UnitTestCase {
    * Creates a mock plugin definition.
    */
   protected function createMockPluginDefinition() {
-    return $this->createMock(\Drupal\jsonrpc\MethodInterface::class);
+    return $this->createMock(MethodInterface::class);
   }
 
   /**
    * Creates a mock JSON-RPC request.
    */
   protected function createMockRequest() {
-    return $this->createMock(\Drupal\jsonrpc\JsonRpcObject\Request::class);
+    return $this->createMock(Request::class);
   }
 
 }

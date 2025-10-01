@@ -69,7 +69,8 @@ class ListArticles extends JsonRpcMethodBase {
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
-    return new static(
+    // @phpstan-ignore return.type
+    return new self(
       $configuration,
       $plugin_id,
       $plugin_definition,

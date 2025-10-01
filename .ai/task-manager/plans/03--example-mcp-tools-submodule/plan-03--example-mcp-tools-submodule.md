@@ -278,12 +278,12 @@ graph TD
 - ✔️ Task 003: Implement ListContentTypes JSON-RPC Method [completed] (depends on: 001)
 - ✔️ Task 004: Implement ListArticles JSON-RPC Method [completed] (depends on: 001)
 
-### Phase 3: Testing
+### ✅ Phase 3: Testing
 
 **Parallel Tasks:**
 
-- Task 005: Create Kernel Tests for Example Methods (depends on: 002, 003, 004)
-- Task 006: Create Unit Tests for Markdown Conversion (depends on: 002)
+- ✔️ Task 005: Create Kernel Tests for Example Methods [completed] (depends on: 002, 003, 004)
+- ✔️ Task 006: Create Unit Tests for Markdown Conversion [completed] (depends on: 002)
 
 ### Phase 4: Quality Assurance
 

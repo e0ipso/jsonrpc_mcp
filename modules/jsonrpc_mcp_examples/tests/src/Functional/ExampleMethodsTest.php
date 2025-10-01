@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\jsonrpc_mcp_examples\Functional;
 
+use GuzzleHttp\RequestOptions;
 use Drupal\Component\Serialization\Json;
 use Drupal\node\Entity\NodeType;
 use Drupal\Tests\BrowserTestBase;
@@ -52,7 +53,7 @@ class ExampleMethodsTest extends BrowserTestBase {
     node_add_body_field(NodeType::load('article'));
 
     // Grant permission to use JSON-RPC services.
-    $role = $this->drupalCreateRole([
+    $this->drupalCreateRole([
       'use jsonrpc services',
       'access content',
     ]);
@@ -388,21 +389,21 @@ class ExampleMethodsTest extends BrowserTestBase {
    * Tests ListArticles respects creation order.
    */
   public function testListArticlesOrder(): void {
-    $node1 = $this->createNode([
+    $this->createNode([
       'type' => 'article',
       'title' => 'First Article',
       'status' => 1,
       'created' => 1000,
     ]);
 
-    $node2 = $this->createNode([
+    $this->createNode([
       'type' => 'article',
       'title' => 'Second Article',
       'status' => 1,
       'created' => 2000,
     ]);
 
-    $node3 = $this->createNode([
+    $this->createNode([
       'type' => 'article',
       'title' => 'Third Article',
       'status' => 1,
@@ -442,9 +443,9 @@ class ExampleMethodsTest extends BrowserTestBase {
   protected function postJson(string $path, array $data): string {
     $url = $this->buildUrl($path);
     $request_options = [
-      \GuzzleHttp\RequestOptions::HTTP_ERRORS => FALSE,
-      \GuzzleHttp\RequestOptions::ALLOW_REDIRECTS => FALSE,
-      \GuzzleHttp\RequestOptions::JSON => $data,
+      RequestOptions::HTTP_ERRORS => FALSE,
+      RequestOptions::ALLOW_REDIRECTS => FALSE,
+      RequestOptions::JSON => $data,
     ];
 
     $client = $this->getHttpClient();

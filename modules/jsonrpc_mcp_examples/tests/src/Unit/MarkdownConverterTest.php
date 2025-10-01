@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\jsonrpc_mcp_examples\Unit;
 
+use Drupal\jsonrpc\MethodInterface;
+use Drupal\jsonrpc\JsonRpcObject\Request;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Tests\UnitTestCase;
 use Drupal\jsonrpc_mcp_examples\Plugin\jsonrpc\Method\ArticleToMarkdown;
 use Drupal\node\NodeInterface;
@@ -105,9 +108,12 @@ class MarkdownConverterTest extends UnitTestCase {
    * Creates a mock node with title and body.
    */
   protected function createMockNode(string $title, string $body): NodeInterface {
-    // Use an anonymous class to create a field object with a public value property.
+    // Use an anonymous class to create a field object with a public
+    // value property.
     $bodyField = new class($body) {
+
       public function __construct(public mixed $value) {}
+
     };
 
     $node = $this->createMock(NodeInterface::class);
@@ -121,10 +127,10 @@ class MarkdownConverterTest extends UnitTestCase {
    * Creates an instance of ArticleToMarkdown for testing.
    */
   protected function createMethod(): ArticleToMarkdown {
-    $entityTypeManager = $this->createMock(\Drupal\Core\Entity\EntityTypeManagerInterface::class);
+    $entityTypeManager = $this->createMock(EntityTypeManagerInterface::class);
 
     // Create a mock Request object required by JsonRpcMethodBase.
-    $request = $this->createMock(\Drupal\jsonrpc\JsonRpcObject\Request::class);
+    $request = $this->createMock(Request::class);
 
     // Configuration must include the jsonrpc_request key.
     $configuration = [
@@ -134,7 +140,7 @@ class MarkdownConverterTest extends UnitTestCase {
     return new ArticleToMarkdown(
       $configuration,
       'examples.article.toMarkdown',
-      $this->createMock(\Drupal\jsonrpc\MethodInterface::class),
+      $this->createMock(MethodInterface::class),
       $entityTypeManager
     );
   }
