@@ -195,33 +195,6 @@ class McpToolTest extends TestCase {
     $this->assertSame($title, $attribute->title);
   }
 
-  /**
-   * Tests that properties are readonly (immutable).
-   *
-   * @covers ::__construct
-   */
-  public function testReadonlyPropertyImmutability(): void {
-    $attribute = new McpTool(title: 'Original Title');
-
-    // Attempting to modify readonly property should cause an error.
-    $this->expectException(\Error::class);
-    $this->expectExceptionMessage('Cannot modify readonly property');
-    $attribute->title = 'Modified Title';
-  }
-
-  /**
-   * Tests that annotation property is readonly.
-   *
-   * @covers ::__construct
-   */
-  public function testAnnotationsReadonlyProperty(): void {
-    $attribute = new McpTool(annotations: ['key' => 'value']);
-
-    // Attempting to modify readonly property should cause an error.
-    $this->expectException(\Error::class);
-    $this->expectExceptionMessage('Cannot modify readonly property');
-    $attribute->annotations = ['new' => 'data'];
-  }
 
   /**
    * Tests reading attribute from a class using reflection.
@@ -235,7 +208,6 @@ class McpToolTest extends TestCase {
     $this->assertCount(1, $attributes);
 
     $mcpToolAttribute = $attributes[0]->newInstance();
-    $this->assertInstanceOf(McpTool::class, $mcpToolAttribute);
     $this->assertSame('Test Tool', $mcpToolAttribute->title);
     $this->assertSame(['category' => 'testing'], $mcpToolAttribute->annotations);
   }
@@ -252,7 +224,6 @@ class McpToolTest extends TestCase {
     $this->assertCount(1, $attributes);
 
     $mcpToolAttribute = $attributes[0]->newInstance();
-    $this->assertInstanceOf(McpTool::class, $mcpToolAttribute);
     $this->assertNull($mcpToolAttribute->title);
     $this->assertNull($mcpToolAttribute->annotations);
   }

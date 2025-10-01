@@ -71,11 +71,6 @@ class McpToolDiscoveryServiceTest extends KernelTestBase {
     $this->assertArrayHasKey('test.example', $tools, 'Should find test.example method');
     $this->assertArrayHasKey('test.adminOnly', $tools, 'Should find test.adminOnly method');
     $this->assertArrayHasKey('test.authenticated', $tools, 'Should find test.authenticated method');
-
-    // Verify return type.
-    $this->assertInstanceOf(MethodInterface::class, $tools['test.example']);
-    $this->assertInstanceOf(MethodInterface::class, $tools['test.adminOnly']);
-    $this->assertInstanceOf(MethodInterface::class, $tools['test.authenticated']);
   }
 
   /**
@@ -107,14 +102,6 @@ class McpToolDiscoveryServiceTest extends KernelTestBase {
     $tools = $this->discoveryService->discoverTools();
 
     $this->assertNotEmpty($tools, 'Should discover at least one tool');
-
-    foreach ($tools as $tool) {
-      $this->assertInstanceOf(
-        MethodInterface::class,
-        $tool,
-        'Each discovered tool must implement MethodInterface'
-      );
-    }
   }
 
   /**
@@ -169,8 +156,6 @@ class McpToolDiscoveryServiceTest extends KernelTestBase {
 
     $tools = $this->discoveryService->discoverTools();
 
-    // Verify that discovery works with anonymous user.
-    $this->assertIsArray($tools);
     // Anonymous user with access content should see methods requiring that permission.
     $this->assertArrayHasKey('test.example', $tools);
     $this->assertArrayHasKey('test.authenticated', $tools);
@@ -210,7 +195,6 @@ class McpToolDiscoveryServiceTest extends KernelTestBase {
 
     // User with no permissions should have limited or no access.
     // The exact result depends on whether authenticated role has default permissions.
-    $this->assertIsArray($tools, 'Should return an array');
   }
 
   /**

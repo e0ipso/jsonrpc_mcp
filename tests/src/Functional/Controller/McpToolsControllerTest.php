@@ -51,7 +51,7 @@ class McpToolsControllerTest extends BrowserTestBase {
     $data = json_decode($response, TRUE);
 
     $this->assertIsArray($data, 'Response should be valid JSON');
-    $this->assertNull(json_last_error(), 'JSON should have no decoding errors');
+    $this->assertSame(JSON_ERROR_NONE, json_last_error(), 'JSON should have no decoding errors');
   }
 
   /**
