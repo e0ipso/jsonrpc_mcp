@@ -297,13 +297,13 @@ graph TD
 
 - Reference: `.ai/task-manager/config/hooks/POST_PHASE.md`
 
-### Phase 1: Test Reduction
+### ✅ Phase 1: Test Reduction
 
 **Parallel Tasks:**
 
-- Task 001: Reduce Unit Tests - Remove trivial unit tests from McpToolTest and McpToolNormalizerTest
-- Task 002: Reduce Kernel Tests - Remove redundant kernel tests from McpToolDiscoveryServiceTest
-- Task 003: Consolidate Functional Tests - Merge 19 functional test methods into single method
+- ✔️ Task 001: Reduce Unit Tests - Remove trivial unit tests from McpToolTest and McpToolNormalizerTest (status: completed)
+- ✔️ Task 002: Reduce Kernel Tests - Remove redundant kernel tests from McpToolDiscoveryServiceTest (status: completed)
+- ✔️ Task 003: Consolidate Functional Tests - Merge 19 functional test methods into single method (status: completed)
 
 **Rationale:** These three tasks can run in parallel as they modify independent test files with no dependencies on each other.
 

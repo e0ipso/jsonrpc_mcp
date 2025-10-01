@@ -12,6 +12,7 @@ use Drupal\jsonrpc\Exception\JsonRpcException;
 use Drupal\jsonrpc\JsonRpcObject\Error;
 use Drupal\jsonrpc\JsonRpcObject\ParameterBag;
 use Drupal\jsonrpc\Plugin\JsonRpcMethodBase;
+use Drupal\jsonrpc_mcp\Attribute\McpTool;
 use Drupal\node\NodeInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -32,15 +33,10 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
     ),
   ]
 )]
-/**
- * Placeholder for future McpTool attribute.
- *
- * @todo Replace with actual #[McpTool] attribute once implemented
- * #[McpTool(
- * title: "Get Article as Markdown",
- * annotations: ['category' => 'content', 'returns' => 'markdown']
- * )].
- */
+#[McpTool(
+  title: "Get Article as Markdown",
+  annotations: ['category' => 'content', 'returns' => 'markdown']
+)]
 class ArticleToMarkdown extends JsonRpcMethodBase {
 
   /**

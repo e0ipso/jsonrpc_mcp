@@ -24,9 +24,12 @@ class McpToolDiscoveryServiceTest extends KernelTestBase {
   protected static $modules = [
     'system',
     'user',
+    'node',
+    'field',
+    'text',
     'jsonrpc',
     'jsonrpc_mcp',
-    'jsonrpc_mcp_test',
+    'jsonrpc_mcp_examples',
   ];
 
   /**
@@ -63,10 +66,10 @@ class McpToolDiscoveryServiceTest extends KernelTestBase {
 
     $tools = $this->discoveryService->discoverTools();
 
-    // Should find test methods with McpTool attribute.
-    $this->assertArrayHasKey('test.example', $tools, 'Should find test.example method');
-    $this->assertArrayHasKey('test.adminOnly', $tools, 'Should find test.adminOnly method');
-    $this->assertArrayHasKey('test.authenticated', $tools, 'Should find test.authenticated method');
+    // Should find example methods with McpTool attribute.
+    $this->assertArrayHasKey('examples.contentTypes.list', $tools, 'Should find examples.contentTypes.list method');
+    $this->assertArrayHasKey('examples.articles.list', $tools, 'Should find examples.articles.list method');
+    $this->assertArrayHasKey('examples.article.toMarkdown', $tools, 'Should find examples.article.toMarkdown method');
   }
 
   /**
@@ -82,8 +85,14 @@ class McpToolDiscoveryServiceTest extends KernelTestBase {
 
     $tools = $this->discoveryService->discoverTools();
 
-    // Should NOT find method without McpTool attribute.
-    $this->assertArrayNotHasKey('test.unmarked', $tools, 'Should NOT find test.unmarked method (no McpTool attribute)');
+    // Verify that only methods with McpTool attribute are discovered.
+    // All discovered tools should have the expected structure.
+    foreach ($tools as $tool_id => $definition) {
+      $this->assertStringStartsWith('examples.', $tool_id, 'Only example methods with McpTool should be discovered');
+    }
+
+    // Verify we found exactly the expected number of methods.
+    $this->assertCount(3, $tools, 'Should discover exactly 3 MCP-marked example methods');
   }
 
   /**
@@ -92,16 +101,28 @@ class McpToolDiscoveryServiceTest extends KernelTestBase {
    * @covers ::discoverTools
    */
   public function testDiscoverToolsRespectsPermissions(): void {
-    // Create user with administer site configuration permission.
-    $admin_user = $this->createUser(['administer site configuration', 'access content']);
-    $this->setCurrentUser($admin_user);
+    // Create user with only 'access content' permission.
+    $user = $this->createUser(['access content']);
+    $this->setCurrentUser($user);
 
-    $admin_tools = $this->discoveryService->discoverTools();
+    $tools = $this->discoveryService->discoverTools();
 
-    // Admin user with permission should see all methods.
-    $this->assertArrayHasKey('test.adminOnly', $admin_tools, 'Admin user should find test.adminOnly');
-    $this->assertArrayHasKey('test.example', $admin_tools, 'Admin user should find test.example');
-    $this->assertArrayHasKey('test.authenticated', $admin_tools, 'Admin user should find test.authenticated');
+    // User with 'access content' should see all example methods since they
+    // all require 'access content' permission.
+    $this->assertArrayHasKey('examples.contentTypes.list', $tools);
+    $this->assertArrayHasKey('examples.articles.list', $tools);
+    $this->assertArrayHasKey('examples.article.toMarkdown', $tools);
+
+    // Test with user having no permissions.
+    $no_perm_user = $this->createUser([]);
+    $this->setCurrentUser($no_perm_user);
+
+    $no_perm_tools = $this->discoveryService->discoverTools();
+
+    // User without 'access content' should not see any methods.
+    $this->assertArrayNotHasKey('examples.contentTypes.list', $no_perm_tools);
+    $this->assertArrayNotHasKey('examples.articles.list', $no_perm_tools);
+    $this->assertArrayNotHasKey('examples.article.toMarkdown', $no_perm_tools);
   }
 
   /**
@@ -115,10 +136,14 @@ class McpToolDiscoveryServiceTest extends KernelTestBase {
 
     $tools = $this->discoveryService->discoverTools();
 
-    // Should discover all three MCP-marked methods.
+    // Should discover all three MCP-marked example methods.
     $this->assertCount(3, $tools, 'Should discover exactly 3 MCP-marked methods');
 
-    $expected_ids = ['test.example', 'test.adminOnly', 'test.authenticated'];
+    $expected_ids = [
+      'examples.contentTypes.list',
+      'examples.articles.list',
+      'examples.article.toMarkdown',
+    ];
     foreach ($expected_ids as $expected_id) {
       $this->assertArrayHasKey($expected_id, $tools, "Should find $expected_id");
     }

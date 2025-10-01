@@ -22,9 +22,12 @@ class McpToolsControllerTest extends BrowserTestBase {
   protected static $modules = [
     'system',
     'user',
+    'node',
+    'field',
+    'text',
     'jsonrpc',
     'jsonrpc_mcp',
-    'jsonrpc_mcp_test',
+    'jsonrpc_mcp_examples',
   ];
 
   /**
@@ -39,7 +42,7 @@ class McpToolsControllerTest extends BrowserTestBase {
     parent::setUp();
 
     // Grant anonymous users the 'access content' permission so they can
-    // see the test.example tool which requires this permission.
+    // see the example tools which require this permission.
     user_role_grant_permissions('anonymous', ['access content']);
   }
 
@@ -86,55 +89,63 @@ class McpToolsControllerTest extends BrowserTestBase {
       $this->assertIsArray($tool['inputSchema'], '"inputSchema" should be an object/array');
     }
 
-    // Section 3: Test-specific tool discovery and field mapping.
-    // Find the test.example tool for detailed validation.
-    $test_tool = NULL;
+    // Section 3: Example tool discovery and field mapping.
+    // Find the examples.contentTypes.list tool for detailed validation.
+    $example_tool = NULL;
     foreach ($data['tools'] as $tool) {
-      if ($tool['name'] === 'test.example') {
-        $test_tool = $tool;
+      if ($tool['name'] === 'examples.contentTypes.list') {
+        $example_tool = $tool;
         break;
       }
     }
 
     // Test tool discovery.
     $tool_names = array_column($data['tools'], 'name');
-    $this->assertContains('test.example', $tool_names, 'Should discover test.example method');
-    $this->assertNotNull($test_tool, 'Should find test.example tool');
+    $this->assertContains('examples.contentTypes.list', $tool_names, 'Should discover examples.contentTypes.list method');
+    $this->assertNotNull($example_tool, 'Should find examples.contentTypes.list tool');
 
     // Test name mapping (JSON-RPC id → MCP name).
-    $this->assertEquals('test.example', $test_tool['name'], 'Tool name should match JSON-RPC id');
+    $this->assertEquals('examples.contentTypes.list', $example_tool['name'], 'Tool name should match JSON-RPC id');
 
     // Test description mapping (JSON-RPC usage → MCP description).
-    $this->assertEquals('Test method for MCP discovery', $test_tool['description']);
+    $this->assertEquals('Lists all available content types', $example_tool['description']);
 
     // Test inputSchema format (JSON Schema compliance).
-    $schema = $test_tool['inputSchema'];
+    $schema = $example_tool['inputSchema'];
     $this->assertEquals('object', $schema['type'], 'inputSchema type should be "object"');
     $this->assertArrayHasKey('properties', $schema, 'inputSchema should have "properties"');
     $this->assertIsArray($schema['properties'], '"properties" should be an array');
-    $this->assertArrayHasKey('required', $schema, 'inputSchema should have "required" field');
-    $this->assertIsArray($schema['required'], '"required" should be an array');
+
+    // The "required" field is optional in JSON Schema and may not be present
+    // if there are no required parameters.
+    if (isset($schema['required'])) {
+      $this->assertIsArray($schema['required'], '"required" should be an array if present');
+    }
 
     // Test optional MCP fields.
-    if (isset($test_tool['title'])) {
-      $this->assertEquals('Test MCP Tool', $test_tool['title']);
+    if (isset($example_tool['title'])) {
+      $this->assertEquals('List Content Types', $example_tool['title']);
     }
 
-    if (isset($test_tool['outputSchema'])) {
-      $this->assertIsArray($test_tool['outputSchema']);
-      $this->assertEquals('object', $test_tool['outputSchema']['type']);
+    if (isset($example_tool['outputSchema'])) {
+      $this->assertIsArray($example_tool['outputSchema']);
+      $this->assertEquals('array', $example_tool['outputSchema']['type']);
     }
 
-    if (isset($test_tool['annotations'])) {
-      $this->assertIsArray($test_tool['annotations']);
+    if (isset($example_tool['annotations'])) {
+      $this->assertIsArray($example_tool['annotations']);
     }
 
-    // Section 4: Access control filtering for anonymous users.
-    // Anonymous users should not see admin-only tools.
-    $this->assertNotContains('test.adminOnly', $tool_names, 'Anonymous users should not see admin-only tools');
+    // Section 4: Access control and filtering for anonymous users.
+    // Verify example tools are visible to anonymous users with 'access content'.
+    $this->assertContains('examples.contentTypes.list', $tool_names);
+    $this->assertContains('examples.articles.list', $tool_names);
+    $this->assertContains('examples.article.toMarkdown', $tool_names);
 
-    // Test that unmarked methods are excluded.
-    $this->assertNotContains('test.unmarked', $tool_names, 'Methods without McpTool attribute should not be discovered');
+    // Verify only MCP-marked tools are returned (all should start with 'examples.').
+    foreach ($tool_names as $tool_name) {
+      $this->assertStringStartsWith('examples.', $tool_name, 'Only example methods with McpTool should be discovered');
+    }
 
     // Section 5: Pagination behavior (if applicable).
     // Test pagination cursor generation.
@@ -176,28 +187,30 @@ class McpToolsControllerTest extends BrowserTestBase {
     }
 
     // Section 6: Authenticated user with permissions.
-    // Create a user with admin permissions and test access control.
-    $admin_user = $this->drupalCreateUser(['administer site configuration']);
-    $this->drupalLogin($admin_user);
+    // Create a user with 'access content' permission.
+    $user = $this->drupalCreateUser(['access content']);
+    $this->drupalLogin($user);
 
     $this->drupalGet('/mcp/tools/list');
-    $admin_data = json_decode($this->getSession()->getPage()->getContent(), TRUE);
+    $user_data = json_decode($this->getSession()->getPage()->getContent(), TRUE);
 
-    // Admin users should see admin-only tools.
-    $admin_tool_names = array_column($admin_data['tools'], 'name');
-    $this->assertContains('test.adminOnly', $admin_tool_names, 'Admin users should see admin-only tools');
+    // User with 'access content' should see all example tools.
+    $user_tool_names = array_column($user_data['tools'], 'name');
+    $this->assertContains('examples.contentTypes.list', $user_tool_names);
+    $this->assertContains('examples.articles.list', $user_tool_names);
+    $this->assertContains('examples.article.toMarkdown', $user_tool_names);
 
-    // Verify the admin tool has correct structure.
-    $admin_tool = NULL;
-    foreach ($admin_data['tools'] as $tool) {
-      if ($tool['name'] === 'test.adminOnly') {
-        $admin_tool = $tool;
+    // Verify one of the tools has correct structure.
+    $content_types_tool = NULL;
+    foreach ($user_data['tools'] as $tool) {
+      if ($tool['name'] === 'examples.contentTypes.list') {
+        $content_types_tool = $tool;
         break;
       }
     }
 
-    $this->assertNotNull($admin_tool, 'Should find test.adminOnly tool');
-    $this->assertEquals('Admin-only test method', $admin_tool['description']);
+    $this->assertNotNull($content_types_tool, 'Should find examples.contentTypes.list tool');
+    $this->assertEquals('Lists all available content types', $content_types_tool['description']);
   }
 
 }

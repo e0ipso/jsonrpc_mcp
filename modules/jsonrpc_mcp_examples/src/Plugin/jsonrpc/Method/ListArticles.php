@@ -11,6 +11,7 @@ use Drupal\jsonrpc\Attribute\JsonRpcParameterDefinition;
 use Drupal\jsonrpc\JsonRpcObject\ParameterBag;
 use Drupal\jsonrpc\ParameterFactory\PaginationParameterFactory;
 use Drupal\jsonrpc\Plugin\JsonRpcMethodBase;
+use Drupal\jsonrpc_mcp\Attribute\McpTool;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -21,12 +22,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * - Pagination using PaginationParameterFactory
  * - Entity access checking
  * - Structured output with multiple fields.
- *
- * @todo Replace with actual #[McpTool] attribute once implemented:
- * #[McpTool(
- *   title: "List Articles",
- *   annotations: ['category' => 'content', 'supports_pagination' => true]
- * )]
  */
 #[JsonRpcMethod(
   id: "examples.articles.list",
@@ -41,6 +36,10 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
       FALSE
     ),
   ]
+)]
+#[McpTool(
+  title: "List Articles",
+  annotations: ['category' => 'content', 'supports_pagination' => TRUE]
 )]
 class ListArticles extends JsonRpcMethodBase {
 

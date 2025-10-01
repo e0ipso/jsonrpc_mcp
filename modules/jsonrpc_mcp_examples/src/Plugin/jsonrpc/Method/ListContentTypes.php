@@ -9,6 +9,7 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\jsonrpc\Attribute\JsonRpcMethod;
 use Drupal\jsonrpc\JsonRpcObject\ParameterBag;
 use Drupal\jsonrpc\Plugin\JsonRpcMethodBase;
+use Drupal\jsonrpc_mcp\Attribute\McpTool;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -22,15 +23,10 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
   usage: new TranslatableMarkup("Lists all available content types"),
   access: ["access content"]
 )]
-/**
- * Placeholder for McpTool attribute.
- *
- * @todo Replace with actual #[McpTool] attribute once implemented.
- *   #[McpTool(
- *     title: "List Content Types",
- *     annotations: ['category' => 'discovery']
- *   )]
- */
+#[McpTool(
+  title: "List Content Types",
+  annotations: ['category' => 'discovery']
+)]
 class ListContentTypes extends JsonRpcMethodBase {
 
   public function __construct(
