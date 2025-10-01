@@ -4,7 +4,7 @@ group: 'mcp-discovery-endpoint'
 dependencies: [1, 9]
 status: 'pending'
 created: '2025-10-01'
-skills: ['drupal-kernel-testing', 'drupal-plugins']
+'skills: ['drupal-kernel-testing', 'drupal-plugins']
 ---
 
 # Create Kernel Tests for McpToolDiscoveryService

@@ -38,7 +38,8 @@
     "packagist",
     "drupalcode",
     "mymodule",
-    "modelcontextprotocol"
+    "modelcontextprotocol",
+    "endcode"
   ],
   "ignorePaths": [
     "node_modules/**",

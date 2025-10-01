@@ -4,7 +4,7 @@ group: 'mcp-discovery-endpoint'
 dependencies: []
 status: 'pending'
 created: '2025-10-01'
-skills: ['drupal-plugins', 'jsonrpc-methods']
+'skills: ['drupal-plugins', 'jsonrpc-methods']
 ---
 
 # Create Test Plugin in jsonrpc_mcp_test Module
@@ -50,11 +50,11 @@ use Drupal\jsonrpc\JsonRpcObject\ParameterBag;
 #[JsonRpcMethod(
   id: "test.example",
   usage: new TranslatableMarkup("Test method for MCP discovery"),
-  access: ["access content"],
+  access: ["access content'],
   params: [
     'input' => new JsonRpcParameterDefinition(
       'input',
-      ["type" => "string"],
+      ["type" => "string'],
       null,
       new TranslatableMarkup("Test input parameter"),
       true

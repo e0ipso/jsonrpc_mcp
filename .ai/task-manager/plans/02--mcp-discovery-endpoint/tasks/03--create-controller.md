@@ -4,7 +4,7 @@ group: 'mcp-discovery-endpoint'
 dependencies: [1, 2]
 status: 'pending'
 created: '2025-10-01'
-skills: ['drupal-controller', 'symfony-http']
+'skills: ['drupal-controller', 'symfony-http']
 ---
 
 # Create McpToolsController
@@ -97,7 +97,7 @@ class McpToolsController extends ControllerBase {
 **Pagination Logic:**
 
 - Default page size: 50 tools per page
-- Cursor format: base64-encoded offset (e.g., "50", "100")
+- Cursor format: base64-encoded offset (e.g., "50', '100")
 - nextCursor is null when no more pages
 - Use array_slice() with preserve_keys=true
 

@@ -4,7 +4,7 @@ group: 'mcp-discovery-endpoint'
 dependencies: []
 status: 'pending'
 created: '2025-10-01'
-skills: ['json-schema', 'php-reflection-api']
+'skills: ['json-schema', 'php-reflection-api']
 ---
 
 # Implement McpToolNormalizer

@@ -2,11 +2,9 @@
 id: 2
 group: 'mcp-tool-attribute'
 dependencies: [1]
-status: 'pending'
-created: 2025-10-01
-skills:
-  - PHPUnit unit testing
-  - PHP Reflection API
+status: 'completed'
+created: '2025-10-01'
+skills: ['phpunit', 'php-reflection-api']
 ---
 
 # Create Comprehensive Unit Test Suite for McpTool Attribute

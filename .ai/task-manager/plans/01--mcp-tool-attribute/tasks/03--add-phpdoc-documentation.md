@@ -2,10 +2,9 @@
 id: 3
 group: 'mcp-tool-attribute'
 dependencies: [1]
-status: 'pending'
-created: 2025-10-01
-skills:
-  - PHPDoc documentation standards
+status: 'completed'
+created: '2025-10-01'
+skills: ['phpdoc']
 ---
 
 # Add PHPDoc Documentation to McpTool Attribute

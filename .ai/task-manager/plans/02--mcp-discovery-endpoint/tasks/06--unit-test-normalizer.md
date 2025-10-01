@@ -4,7 +4,7 @@ group: 'mcp-discovery-endpoint'
 dependencies: [2]
 status: 'pending'
 created: '2025-10-01'
-skills: ['phpunit', 'test-doubles']
+'skills: ['phpunit', 'test-doubles']
 ---
 
 # Create Unit Tests for McpToolNormalizer

@@ -4,7 +4,7 @@ group: 'mcp-discovery-endpoint'
 dependencies: [3, 5, 9]
 status: 'pending'
 created: '2025-10-01'
-skills: ['drupal-functional-testing', 'http-testing']
+'skills: ['drupal-functional-testing', 'http-testing']
 ---
 
 # Create Functional Tests for McpToolsController

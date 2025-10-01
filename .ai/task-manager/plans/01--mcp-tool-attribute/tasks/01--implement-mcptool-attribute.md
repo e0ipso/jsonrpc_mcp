@@ -3,10 +3,8 @@ id: 1
 group: 'mcp-tool-attribute'
 dependencies: []
 status: 'completed'
-created: 2025-10-01
-skills:
-  - PHP 8.1+ attributes
-  - Drupal plugin system
+created: '2025-10-01'
+skills: ['php-attributes', 'drupal-plugins']
 ---
 
 # Implement McpTool PHP Attribute Class

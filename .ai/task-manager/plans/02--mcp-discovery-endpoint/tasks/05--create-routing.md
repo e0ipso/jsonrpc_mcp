@@ -4,7 +4,7 @@ group: 'mcp-discovery-endpoint'
 dependencies: [3]
 status: 'pending'
 created: '2025-10-01'
-skills: ['drupal-routing']
+'skills: ['drupal-routing']
 ---
 
 # Create Routing Configuration

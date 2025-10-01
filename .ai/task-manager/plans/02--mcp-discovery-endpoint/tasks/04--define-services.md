@@ -4,7 +4,7 @@ group: 'mcp-discovery-endpoint'
 dependencies: [1, 2]
 status: 'pending'
 created: '2025-10-01'
-skills: ['drupal-services']
+'skills: ['drupal-services']
 ---
 
 # Define Services in jsonrpc_mcp.services.yml
