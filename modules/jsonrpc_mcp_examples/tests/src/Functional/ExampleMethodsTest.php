@@ -107,8 +107,7 @@ class ExampleMethodsTest extends BrowserTestBase {
       'id' => '1',
     ];
 
-    $response = $this->postJson('/jsonrpc', $request);
-    $data = Json::decode($response);
+    $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
     $this->assertArrayHasKey('result', $data);
@@ -133,8 +132,7 @@ class ExampleMethodsTest extends BrowserTestBase {
       'id' => '1',
     ];
 
-    $response = $this->postJson('/jsonrpc', $request);
-    $data = Json::decode($response);
+    $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayHasKey('error', $data);
     $this->assertStringContainsString('not found', $data['error']['message']);
@@ -165,8 +163,7 @@ class ExampleMethodsTest extends BrowserTestBase {
       'id' => '1',
     ];
 
-    $response = $this->postJson('/jsonrpc', $request);
-    $data = Json::decode($response);
+    $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayHasKey('error', $data);
     $this->assertStringContainsString('not an article', $data['error']['message']);
@@ -196,8 +193,7 @@ class ExampleMethodsTest extends BrowserTestBase {
       'id' => '1',
     ];
 
-    $response = $this->postJson('/jsonrpc', $request);
-    $data = Json::decode($response);
+    $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
     $result = $data['result'];
@@ -223,8 +219,7 @@ class ExampleMethodsTest extends BrowserTestBase {
       'id' => '1',
     ];
 
-    $response = $this->postJson('/jsonrpc', $request);
-    $data = Json::decode($response);
+    $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
     $this->assertArrayHasKey('result', $data);
@@ -267,8 +262,7 @@ class ExampleMethodsTest extends BrowserTestBase {
       'id' => '1',
     ];
 
-    $response = $this->postJson('/jsonrpc', $request);
-    $data = Json::decode($response);
+    $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
     $this->assertCount(3, $data['result']);
@@ -301,8 +295,7 @@ class ExampleMethodsTest extends BrowserTestBase {
       'id' => '1',
     ];
 
-    $response = $this->postJson('/jsonrpc', $request);
-    $data = Json::decode($response);
+    $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
     $this->assertCount(3, $data['result']);
@@ -318,8 +311,7 @@ class ExampleMethodsTest extends BrowserTestBase {
 
     // Test second page.
     $request['params']['page'] = ['offset' => 3, 'limit' => 3];
-    $response = $this->postJson('/jsonrpc', $request);
-    $data = Json::decode($response);
+    $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertCount(2, $data['result']);
   }
@@ -346,8 +338,7 @@ class ExampleMethodsTest extends BrowserTestBase {
       'id' => '1',
     ];
 
-    $response = $this->postJson('/jsonrpc', $request);
-    $data = Json::decode($response);
+    $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
     $this->assertCount(3, $data['result']);
@@ -379,8 +370,7 @@ class ExampleMethodsTest extends BrowserTestBase {
       'id' => '1',
     ];
 
-    $response = $this->postJson('/jsonrpc', $request);
-    $data = Json::decode($response);
+    $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
     $this->assertCount(1, $data['result']);
@@ -401,8 +391,7 @@ class ExampleMethodsTest extends BrowserTestBase {
       'id' => '1',
     ];
 
-    $response = $this->postJson('/jsonrpc', $request);
-    $data = Json::decode($response);
+    $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
     $this->assertIsArray($data['result']);
@@ -444,8 +433,7 @@ class ExampleMethodsTest extends BrowserTestBase {
       'id' => '1',
     ];
 
-    $response = $this->postJson('/jsonrpc', $request);
-    $data = Json::decode($response);
+    $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
     $this->assertEquals('Third Article', $data['result'][0]['title']);
@@ -476,6 +464,32 @@ class ExampleMethodsTest extends BrowserTestBase {
     $response = $client->request('POST', $url, $request_options);
 
     return (string) $response->getBody();
+  }
+
+  /**
+   * Posts JSON and decodes the response with error handling.
+   *
+   * @param string $path
+   *   The path to post to.
+   * @param array $data
+   *   The data to post.
+   *
+   * @return array
+   *   The decoded JSON response.
+   */
+  protected function postJsonAndDecode(string $path, array $data): array {
+    $response = $this->postJson($path, $data);
+    $decoded = Json::decode($response);
+
+    // Provide helpful debugging if JSON decode fails.
+    if ($decoded === NULL) {
+      $this->fail(sprintf(
+        'JSON decode failed. Response (first 1000 chars): %s',
+        substr($response, 0, 1000)
+      ));
+    }
+
+    return $decoded;
   }
 
 }
