@@ -99,6 +99,11 @@ jobs:
         with:
           path: ${{ env.DRUPAL_ROOT }}/${{ env.MODULE_PATH }}
 
+      - name: Install jsonrpc dependency
+        working-directory: ${{ env.DRUPAL_ROOT }}
+        run: |
+          composer require drupal/jsonrpc:^3@beta --no-interaction
+
       - name: Setup module
         working-directory: ${{ env.DRUPAL_ROOT }}/${{ env.MODULE_PATH }}
         run: |
