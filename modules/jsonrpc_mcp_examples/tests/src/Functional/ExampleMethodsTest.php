@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\jsonrpc_mcp_examples\Functional;
 
+use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
 use GuzzleHttp\RequestOptions;
 use Drupal\Component\Serialization\Json;
 use Drupal\node\Entity\NodeType;
@@ -52,14 +54,14 @@ class ExampleMethodsTest extends BrowserTestBase {
     // Add body field to article content type.
     // Create the body field storage if it doesn't exist.
     if (!\Drupal::entityTypeManager()->getStorage('field_storage_config')->load('node.body')) {
-      \Drupal\field\Entity\FieldStorageConfig::create([
+      FieldStorageConfig::create([
         'entity_type' => 'node',
         'field_name' => 'body',
         'type' => 'text_with_summary',
       ])->save();
     }
     // Add body field instance for the article content type.
-    \Drupal\field\Entity\FieldConfig::create([
+    FieldConfig::create([
       'field_name' => 'body',
       'entity_type' => 'node',
       'bundle' => 'article',

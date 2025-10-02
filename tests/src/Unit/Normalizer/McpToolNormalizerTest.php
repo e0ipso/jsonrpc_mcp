@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\jsonrpc_mcp\Unit\Normalizer;
 
-use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\jsonrpc\Attribute\JsonRpcParameterDefinition;
 use Drupal\jsonrpc\MethodInterface;
 use Drupal\jsonrpc_mcp\Normalizer\McpToolNormalizer;
@@ -225,7 +224,6 @@ class McpToolNormalizerTest extends TestCase {
     $this->assertArrayHasKey('optional_field', $result['inputSchema']['properties']);
     $this->assertSame(['required_field'], $result['inputSchema']['required']);
   }
-
 
   /**
    * Tests comprehensive JSON-RPC to MCP transformation with all features.
