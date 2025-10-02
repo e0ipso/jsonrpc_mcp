@@ -319,7 +319,7 @@ class McpToolsControllerTest extends BrowserTestBase {
    * Tests invoke endpoint successfully executes a tool.
    */
   public function testInvokeEndpointSuccess(): void {
-    $user = $this->drupalCreateUser(['access content']);
+    $user = $this->drupalCreateUser(['access content', 'use jsonrpc services']);
     $this->drupalLogin($user);
 
     $url = $this->buildUrl('/mcp/tools/invoke');
@@ -347,7 +347,7 @@ class McpToolsControllerTest extends BrowserTestBase {
    * Tests invoke endpoint returns 404 for non-existent tool.
    */
   public function testInvokeEndpointToolNotFound(): void {
-    $user = $this->drupalCreateUser(['access content']);
+    $user = $this->drupalCreateUser(['access content', 'use jsonrpc services']);
     $this->drupalLogin($user);
 
     $url = $this->buildUrl('/mcp/tools/invoke');
@@ -376,7 +376,7 @@ class McpToolsControllerTest extends BrowserTestBase {
    * Tests invoke endpoint returns 400 for malformed request.
    */
   public function testInvokeEndpointMalformedRequest(): void {
-    $user = $this->drupalCreateUser(['access content']);
+    $user = $this->drupalCreateUser(['access content', 'use jsonrpc services']);
     $this->drupalLogin($user);
 
     $url = $this->buildUrl('/mcp/tools/invoke');
@@ -405,7 +405,7 @@ class McpToolsControllerTest extends BrowserTestBase {
    * Tests invoke endpoint returns 400 for invalid JSON.
    */
   public function testInvokeEndpointInvalidJson(): void {
-    $user = $this->drupalCreateUser(['access content']);
+    $user = $this->drupalCreateUser(['access content', 'use jsonrpc services']);
     $this->drupalLogin($user);
 
     $url = $this->buildUrl('/mcp/tools/invoke');
