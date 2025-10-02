@@ -112,7 +112,7 @@ jobs:
       - name: Run PHPCS
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          php vendor/bin/phpcs --standard=Drupal,DrupalPractice --extensions=php,module/php,install/php,inc/php,yml ${{ env.MODULE_PATH }}
+          php vendor/bin/phpcs --standard=Drupal,DrupalPractice --extensions=php,module/php,install/php,inc/php,yml --ignore=*/vendor/*,*/node_modules/* ${{ env.MODULE_PATH }}
 
       - name: Run PHPStan
         working-directory: ${{ env.DRUPAL_ROOT }}

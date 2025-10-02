@@ -137,12 +137,14 @@ class McpToolsControllerTest extends BrowserTestBase {
     }
 
     // Section 4: Access control and filtering for anonymous users.
-    // Verify example tools are visible to anonymous users with 'access content'.
+    // Verify example tools are visible to anonymous users with
+    // 'access content'.
     $this->assertContains('examples.contentTypes.list', $tool_names);
     $this->assertContains('examples.articles.list', $tool_names);
     $this->assertContains('examples.article.toMarkdown', $tool_names);
 
-    // Verify only MCP-marked tools are returned (all should start with 'examples.').
+    // Verify only MCP-marked tools are returned (all should start with
+    // 'examples.').
     foreach ($tool_names as $tool_name) {
       $this->assertStringStartsWith('examples.', $tool_name, 'Only example methods with McpTool should be discovered');
     }

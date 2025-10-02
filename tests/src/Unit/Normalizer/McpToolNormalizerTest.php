@@ -10,7 +10,6 @@ use Drupal\jsonrpc\MethodInterface;
 use Drupal\jsonrpc_mcp\Normalizer\McpToolNormalizer;
 use Drupal\Tests\jsonrpc_mcp\Unit\Normalizer\Fixtures\TestMethodWithMcpTool;
 use Drupal\Tests\jsonrpc_mcp\Unit\Normalizer\Fixtures\TestMethodWithOutputSchema;
-use Drupal\Tests\jsonrpc_mcp\Unit\Normalizer\Fixtures\TestMethodWithoutMcpTool;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -264,7 +263,7 @@ class McpToolNormalizerTest extends TestCase {
    * - Required vs optional parameters
    * - TranslatableMarkup conversion
    * - McpTool attribute mapping (title, annotations)
-   * - outputSchema inclusion
+   * - outputSchema inclusion.
    *
    * @covers ::normalize
    * @covers ::buildInputSchema

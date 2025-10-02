@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\Tests\jsonrpc_mcp\Unit\Attribute;
 
 use Drupal\jsonrpc_mcp\Attribute\McpTool;
-use Drupal\Tests\jsonrpc_mcp\Unit\Attribute\Fixtures\TestClassWithDefaultMcpTool;
 use Drupal\Tests\jsonrpc_mcp\Unit\Attribute\Fixtures\TestClassWithMcpTool;
 use PHPUnit\Framework\TestCase;
 
