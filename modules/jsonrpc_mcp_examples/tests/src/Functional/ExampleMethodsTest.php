@@ -408,6 +408,10 @@ class ExampleMethodsTest extends BrowserTestBase {
     // Use BrowserTestBase's HTTP client with Basic Auth.
     $client = $this->getHttpClient();
 
+    // passRaw is added by drupalCreateUser() but not in UserInterface.
+    /** @var object{passRaw: string} $user */
+    $user = $this->testUser;
+
     $response = $client->request('POST', $this->buildUrl($path), [
       'headers' => [
         'Content-Type' => 'application/json',
@@ -415,7 +419,7 @@ class ExampleMethodsTest extends BrowserTestBase {
       ],
       'body' => json_encode($data),
       'http_errors' => FALSE,
-      'auth' => [$this->testUser->getAccountName(), $this->testUser->passRaw],
+      'auth' => [$this->testUser->getAccountName(), $user->passRaw],
     ]);
 
     return (string) $response->getBody();
