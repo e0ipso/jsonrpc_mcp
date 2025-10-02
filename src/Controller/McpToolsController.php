@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\jsonrpc_mcp\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\jsonrpc\HandlerInterface;
 use Drupal\jsonrpc_mcp\Normalizer\McpToolNormalizer;
 use Drupal\jsonrpc_mcp\Service\McpToolDiscoveryService;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -28,10 +29,13 @@ class McpToolsController extends ControllerBase {
    *   The MCP tool discovery service.
    * @param \Drupal\jsonrpc_mcp\Normalizer\McpToolNormalizer $normalizer
    *   The MCP tool normalizer service.
+   * @param \Drupal\jsonrpc\HandlerInterface $handler
+   *   The JSON-RPC handler service.
    */
   public function __construct(
     protected McpToolDiscoveryService $toolDiscovery,
     protected McpToolNormalizer $normalizer,
+    protected HandlerInterface $handler,
   ) {}
 
   /**
@@ -46,6 +50,7 @@ class McpToolsController extends ControllerBase {
     return new self(
       $container->get('jsonrpc_mcp.tool_discovery'),
       $container->get('jsonrpc_mcp.tool_normalizer'),
+      $container->get('jsonrpc.handler'),
     );
   }
 
@@ -86,6 +91,48 @@ class McpToolsController extends ControllerBase {
     return new JsonResponse([
       'tools' => $normalized_tools,
       'nextCursor' => $next_cursor,
+    ]);
+  }
+
+  /**
+   * Returns detailed MCP-compliant tool description.
+   *
+   * Handles the /mcp/tools/describe endpoint, returning detailed schema
+   * for a specific tool identified by the 'name' query parameter.
+   *
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The HTTP request object.
+   *
+   * @return \Symfony\Component\HttpFoundation\JsonResponse
+   *   JSON response with 'tool' object or 'error' object.
+   */
+  public function describe(Request $request): JsonResponse {
+    $name = $request->query->get('name');
+
+    if (!$name) {
+      return new JsonResponse([
+        'error' => [
+          'code' => 'missing_parameter',
+          'message' => 'Required parameter "name" is missing',
+        ],
+      ], 400);
+    }
+
+    $tools = $this->toolDiscovery->discoverTools();
+
+    if (!isset($tools[$name])) {
+      return new JsonResponse([
+        'error' => [
+          'code' => 'tool_not_found',
+          'message' => sprintf("Tool '%s' not found or access denied", $name),
+        ],
+      ], 404);
+    }
+
+    $normalized_tool = $this->normalizer->normalize($tools[$name]);
+
+    return new JsonResponse([
+      'tool' => $normalized_tool,
     ]);
   }
 
