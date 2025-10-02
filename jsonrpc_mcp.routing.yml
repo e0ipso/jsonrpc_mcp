@@ -4,8 +4,29 @@ jsonrpc_mcp.tools_list:
     _controller: '\Drupal\jsonrpc_mcp\Controller\McpToolsController::list'
     _title: 'MCP Tools Discovery'
   requirements:
-    # This endpoint is publicly accessible to allow MCP clients to discover available tools.
-    # Access control is enforced by the individual JSON-RPC method plugins.
+    # Requires 'access mcp tool discovery' permission for tool discovery.
+    # Execution permissions are enforced separately by JSON-RPC method plugins.
+    _permission: 'access mcp tool discovery'
+  options:
+    no_cache: 'TRUE'
+
+jsonrpc_mcp.tools_describe:
+  path: '/mcp/tools/describe'
+  defaults:
+    _controller: '\Drupal\jsonrpc_mcp\Controller\McpToolsController::describe'
+    _title: 'MCP Tool Description'
+  requirements:
+    _permission: 'access mcp tool discovery'
+  options:
+    no_cache: 'TRUE'
+
+jsonrpc_mcp.tools_invoke:
+  path: '/mcp/tools/invoke'
+  defaults:
+    _controller: '\Drupal\jsonrpc_mcp\Controller\McpToolsController::invoke'
+    _title: 'MCP Tool Invocation'
+  requirements:
     _access: 'TRUE'
+    _method: 'POST'
   options:
     no_cache: 'TRUE'
