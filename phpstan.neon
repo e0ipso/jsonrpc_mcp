@@ -9,5 +9,3 @@ parameters:
     - '#Trying to mock an undefined method .* on class .*ContextRepositoryInterface#'
     - '#Trait Drupal\\jsonrpc_mcp\\Trait\\DebugLoggingTrait is used zero times and is not analysed#'
     - '#Unsafe usage of new static\(\)#'
-    # BrowserKit client chain - getClient() exists on concrete implementations.
-    - '#Call to an undefined method .*(DriverInterface|AbstractBrowser)::getClient\(\)#'
