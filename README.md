@@ -295,6 +295,7 @@ Lists all available MCP tools with pagination support.
   "nextCursor": "string|null"
 }
 ```
+
 Fields `name`, `description`, and `inputSchema` are not optional and they will always be present.
 
 **Pagination:**
@@ -337,6 +338,7 @@ Returns detailed schema information for a specific tool.
   }
 }
 ```
+
 Fields `name`, `description`, `inputSchema`, and `outputSchema` are not optional and they will always be present.
 
 **Error Response (400/404):**
