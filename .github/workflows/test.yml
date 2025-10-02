@@ -107,15 +107,12 @@ jobs:
       - name: Setup module
         working-directory: ${{ env.DRUPAL_ROOT }}/${{ env.MODULE_PATH }}
         run: |
-          composer config --no-plugins allow-plugins.phpstan/extension-installer true
-          composer --no-interaction --no-progress install
-
           npm install --include=dev
 
       - name: Run PHPCS
-        working-directory: ${{ env.DRUPAL_ROOT }}/${{ env.MODULE_PATH }}
+        working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          composer run-script lint:check
+          php vendor/bin/phpcs --standard=Drupal,DrupalPractice --extensions=php,module/php,install/php,inc/php,yml ${{ env.MODULE_PATH }}
 
       - name: Run PHPStan
         working-directory: ${{ env.DRUPAL_ROOT }}
