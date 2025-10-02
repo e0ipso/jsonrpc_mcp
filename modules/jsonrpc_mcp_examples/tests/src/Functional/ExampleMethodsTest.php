@@ -350,13 +350,13 @@ class ExampleMethodsTest extends BrowserTestBase {
    */
   public function testListArticlesOrder(): void {
     // Create articles with different creation times.
-    $old_node = $this->createNode([
+    $this->createNode([
       'type' => 'article',
       'title' => 'Old Article',
       'status' => 1,
       'created' => time() - 3600,
     ]);
-    $new_node = $this->createNode([
+    $this->createNode([
       'type' => 'article',
       'title' => 'New Article',
       'status' => 1,
