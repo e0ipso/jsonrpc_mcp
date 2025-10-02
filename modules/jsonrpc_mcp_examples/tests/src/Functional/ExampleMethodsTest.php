@@ -406,7 +406,7 @@ class ExampleMethodsTest extends BrowserTestBase {
     // Get CSRF token for cookie authentication.
     $csrf_token_url = Url::fromRoute('system.csrftoken')
       ->setAbsolute()->toString();
-    $csrf_response = $client->get($csrf_token_url, [
+    $csrf_response = $client->request('GET', $csrf_token_url, [
       'cookies' => $this->getSessionCookies(),
     ]);
     $csrf_token = (string) $csrf_response->getBody();
