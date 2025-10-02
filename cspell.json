@@ -40,7 +40,8 @@
     "mymodule",
     "modelcontextprotocol",
     "endcode",
-    "nids"
+    "nids",
+    "csrftoken"
   ],
   "ignorePaths": [
     "node_modules/**",

@@ -73,6 +73,13 @@ class ExampleMethodsTest extends BrowserTestBase {
       ->setComponent('body', ['label' => 'hidden', 'type' => 'text_default'])
       ->save();
 
+    // Enable cookie authentication for JSON-RPC.
+    $this->container->get('config.factory')
+      ->getEditable('jsonrpc.settings')
+      ->set('cookie', TRUE)
+      ->save(TRUE);
+    \Drupal::service('router.builder')->rebuild();
+
     // Create and login a user with JSON-RPC and content access permissions.
     $user = $this->drupalCreateUser([
       'use jsonrpc services',
@@ -391,14 +398,23 @@ class ExampleMethodsTest extends BrowserTestBase {
    *   The response body.
    */
   protected function postJson(string $path, array $data): string {
-    // Use BrowserTestBase's HTTP client with session cookies.
+    // Use BrowserTestBase's HTTP client with session cookies and CSRF token.
     // drupalLogin() was already called in setUp(), so use those cookies.
     $client = $this->getHttpClient();
+
+    // Get CSRF token for cookie authentication.
+    $csrf_token_url = \Drupal\Core\Url::fromRoute('system.csrftoken')
+      ->setAbsolute()->toString();
+    $csrf_response = $client->get($csrf_token_url, [
+      'cookies' => $this->getSessionCookies(),
+    ]);
+    $csrf_token = (string) $csrf_response->getBody();
 
     $response = $client->request('POST', $this->buildUrl($path), [
       'headers' => [
         'Content-Type' => 'application/json',
         'Accept' => 'application/json',
+        'X-CSRF-Token' => $csrf_token,
       ],
       'body' => json_encode($data),
       'http_errors' => FALSE,
