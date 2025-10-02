@@ -459,6 +459,8 @@ class ExampleMethodsTest extends BrowserTestBase {
       RequestOptions::HTTP_ERRORS => FALSE,
       RequestOptions::ALLOW_REDIRECTS => FALSE,
       RequestOptions::JSON => $data,
+      // Include session cookies for authentication.
+      RequestOptions::COOKIES => $this->getSessionCookies(),
     ];
 
     $client = $this->getHttpClient();
