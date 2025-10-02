@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\jsonrpc_mcp_examples\Functional;
 
+use Drupal\Component\Serialization\Json;
+use Drupal\Core\Url;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
-use Drupal\Component\Serialization\Json;
 use Drupal\node\Entity\NodeType;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\node\Traits\NodeCreationTrait;
@@ -403,7 +404,7 @@ class ExampleMethodsTest extends BrowserTestBase {
     $client = $this->getHttpClient();
 
     // Get CSRF token for cookie authentication.
-    $csrf_token_url = \Drupal\Core\Url::fromRoute('system.csrftoken')
+    $csrf_token_url = Url::fromRoute('system.csrftoken')
       ->setAbsolute()->toString();
     $csrf_response = $client->get($csrf_token_url, [
       'cookies' => $this->getSessionCookies(),
