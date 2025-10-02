@@ -46,6 +46,7 @@ class McpToolsController extends ControllerBase {
    * {@inheritdoc}
    *
    * @return \Drupal\jsonrpc_mcp\Controller\McpToolsController
+   *   The controller.
    */
   public static function create(ContainerInterface $container) {
     return new self(
