@@ -10,7 +10,6 @@ The [Model Context Protocol (MCP) specification (2025-06-18)](https://modelconte
 
 - 🔌 **Automatic Tool Discovery**: Expose existing JSON-RPC methods as MCP tools using a simple PHP attribute
 - 📋 **MCP-Compliant Endpoints**: Provides `/mcp/tools/list` endpoint following MCP specification (2025-06-18)
-- 🔍 **Auto-Discovery Support**: Optional `/.well-known/mcp.json` endpoint for automatic server discovery
 - 🔐 **Security Built-in**: Inherits access control from JSON-RPC method permissions
 - 📊 **JSON Schema Validation**: Automatic conversion of JSON-RPC schemas to MCP inputSchema/outputSchema
 
