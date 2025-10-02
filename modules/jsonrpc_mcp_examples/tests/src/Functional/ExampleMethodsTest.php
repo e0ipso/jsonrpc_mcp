@@ -391,20 +391,22 @@ class ExampleMethodsTest extends BrowserTestBase {
    *   The response body.
    */
   protected function postJson(string $path, array $data): string {
-    // Use the internal BrowserTestBase HTTP client which maintains session.
-    $this->getSession()->getDriver()->getClient()->request(
-      'POST',
-      $path,
-      [],
-      [],
-      [
-        'CONTENT_TYPE' => 'application/json',
-        'HTTP_ACCEPT' => 'application/json',
-      ],
-      json_encode($data)
-    );
+    // Get the Guzzle HTTP client from the BrowserKit client.
+    // This maintains the session established by drupalLogin().
+    /** @var \Symfony\Component\BrowserKit\AbstractBrowser $browserKitClient */
+    $browserKitClient = $this->getSession()->getDriver()->getClient();
+    /** @var \GuzzleHttp\ClientInterface $httpClient */
+    $httpClient = $browserKitClient->getClient();
 
-    return $this->getSession()->getPage()->getContent();
+    $response = $httpClient->request('POST', $this->buildUrl($path), [
+      'headers' => [
+        'Content-Type' => 'application/json',
+        'Accept' => 'application/json',
+      ],
+      'body' => json_encode($data),
+    ]);
+
+    return (string) $response->getBody();
   }
 
   /**
