@@ -50,7 +50,29 @@ class ExampleMethodsTest extends BrowserTestBase {
     ])->save();
 
     // Add body field to article content type.
-    node_add_body_field(NodeType::load('article'));
+    // Create the body field storage if it doesn't exist.
+    if (!\Drupal::entityTypeManager()->getStorage('field_storage_config')->load('node.body')) {
+      \Drupal\field\Entity\FieldStorageConfig::create([
+        'entity_type' => 'node',
+        'field_name' => 'body',
+        'type' => 'text_with_summary',
+      ])->save();
+    }
+    // Add body field instance for the article content type.
+    \Drupal\field\Entity\FieldConfig::create([
+      'field_name' => 'body',
+      'entity_type' => 'node',
+      'bundle' => 'article',
+      'label' => 'Body',
+    ])->save();
+    // Assign widget settings for the 'default' form mode.
+    \Drupal::service('entity_display.repository')->getFormDisplay('node', 'article')
+      ->setComponent('body', ['type' => 'text_textarea_with_summary'])
+      ->save();
+    // Assign display settings for the 'default' view mode.
+    \Drupal::service('entity_display.repository')->getViewDisplay('node', 'article')
+      ->setComponent('body', ['label' => 'hidden', 'type' => 'text_default'])
+      ->save();
 
     // Grant permission to use JSON-RPC services.
     $this->drupalCreateRole([

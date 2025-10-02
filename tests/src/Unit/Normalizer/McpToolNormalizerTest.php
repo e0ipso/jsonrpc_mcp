@@ -48,7 +48,7 @@ class McpToolNormalizerTest extends TestCase {
     $method->method('id')
       ->willReturn('test.method');
     $method->method('getUsage')
-      ->willReturn(new TranslatableMarkup('Test description'));
+      ->willReturn('Test description');
     $method->method('getParams')
       ->willReturn([]);
     $method->method('getClass')
@@ -81,7 +81,7 @@ class McpToolNormalizerTest extends TestCase {
     $method->method('id')
       ->willReturn('test.method');
     $method->method('getUsage')
-      ->willReturn(new TranslatableMarkup('Test description'));
+      ->willReturn('Test description');
     $method->method('getParams')
       ->willReturn([]);
     $method->method('getClass')
@@ -107,7 +107,7 @@ class McpToolNormalizerTest extends TestCase {
     $method->method('id')
       ->willReturn('test.method');
     $method->method('getUsage')
-      ->willReturn(new TranslatableMarkup('Test description'));
+      ->willReturn('Test description');
     $method->method('getParams')
       ->willReturn([]);
     $method->method('getClass')
@@ -132,7 +132,7 @@ class McpToolNormalizerTest extends TestCase {
     $method->method('id')
       ->willReturn('test.method');
     $method->method('getUsage')
-      ->willReturn(new TranslatableMarkup('Test description'));
+      ->willReturn('Test description');
     $method->method('getParams')
       ->willReturn([]);
     $method->method('getClass')
@@ -173,7 +173,7 @@ class McpToolNormalizerTest extends TestCase {
     $method->method('id')
       ->willReturn('test.method');
     $method->method('getUsage')
-      ->willReturn(new TranslatableMarkup('Test'));
+      ->willReturn('Test');
     $method->method('getParams')
       ->willReturn(['name' => $param1, 'age' => $param2]);
     $method->method('getClass')
@@ -213,7 +213,7 @@ class McpToolNormalizerTest extends TestCase {
     $method->method('id')
       ->willReturn('test.method');
     $method->method('getUsage')
-      ->willReturn(new TranslatableMarkup('Test'));
+      ->willReturn('Test');
     $method->method('getParams')
       ->willReturn(['required_field' => $param1, 'optional_field' => $param2]);
     $method->method('getClass')
@@ -226,34 +226,6 @@ class McpToolNormalizerTest extends TestCase {
     $this->assertSame(['required_field'], $result['inputSchema']['required']);
   }
 
-  /**
-   * Tests TranslatableMarkup conversion to string.
-   *
-   * Validates that Drupal's TranslatableMarkup objects are correctly
-   * converted to plain strings in the MCP tool schema.
-   *
-   * @covers ::normalize
-   */
-  public function testTranslatableMarkupConversion(): void {
-    $translatable = new TranslatableMarkup('Translatable text with @placeholder', [
-      '@placeholder' => 'value',
-    ]);
-
-    $method = $this->createMock(MethodInterface::class);
-    $method->method('id')
-      ->willReturn('test.method');
-    $method->method('getUsage')
-      ->willReturn($translatable);
-    $method->method('getParams')
-      ->willReturn([]);
-    $method->method('getClass')
-      ->willReturn(NULL);
-
-    $result = $this->normalizer->normalize($method);
-
-    $this->assertIsString($result['description']);
-    $this->assertSame('Translatable text with value', $result['description']);
-  }
 
   /**
    * Tests comprehensive JSON-RPC to MCP transformation with all features.
@@ -261,7 +233,6 @@ class McpToolNormalizerTest extends TestCase {
    * Integration test validating the complete transformation pipeline:
    * - JSON-RPC method -> MCP tool schema
    * - Required vs optional parameters
-   * - TranslatableMarkup conversion
    * - McpTool attribute mapping (title, annotations)
    * - outputSchema inclusion.
    *
@@ -273,13 +244,13 @@ class McpToolNormalizerTest extends TestCase {
     $param1 = new JsonRpcParameterDefinition(
       id: 'required_param',
       schema: ['type' => 'string'],
-      description: new TranslatableMarkup('Required parameter'),
+      description: 'Required parameter',
       required: TRUE,
     );
     $param2 = new JsonRpcParameterDefinition(
       id: 'optional_param',
       schema: ['type' => 'integer', 'minimum' => 0],
-      description: new TranslatableMarkup('Optional parameter'),
+      description: 'Optional parameter',
       required: FALSE,
     );
 
@@ -287,7 +258,7 @@ class McpToolNormalizerTest extends TestCase {
     $method->method('id')
       ->willReturn('complete.method');
     $method->method('getUsage')
-      ->willReturn(new TranslatableMarkup('Complete method with all features'));
+      ->willReturn('Complete method with all features');
     $method->method('getParams')
       ->willReturn(['required_param' => $param1, 'optional_param' => $param2]);
     $method->method('getClass')
