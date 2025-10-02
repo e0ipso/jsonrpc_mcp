@@ -6,7 +6,6 @@ namespace Drupal\Tests\jsonrpc_mcp_examples\Functional;
 
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
-use GuzzleHttp\RequestOptions;
 use Drupal\Component\Serialization\Json;
 use Drupal\node\Entity\NodeType;
 use Drupal\Tests\BrowserTestBase;
