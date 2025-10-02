@@ -76,11 +76,12 @@ class ExampleMethodsTest extends BrowserTestBase {
       ->setComponent('body', ['label' => 'hidden', 'type' => 'text_default'])
       ->save();
 
-    // Grant permission to use JSON-RPC services.
-    $this->drupalCreateRole([
+    // Create and login a user with JSON-RPC and content access permissions.
+    $user = $this->drupalCreateUser([
       'use jsonrpc services',
       'access content',
     ]);
+    $this->drupalLogin($user);
   }
 
   /**
