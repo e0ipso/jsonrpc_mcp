@@ -168,6 +168,16 @@ class McpToolsController extends ControllerBase {
       ], 400);
     }
 
+    // Validate JSON decode success.
+    if ($data === NULL || !is_array($data)) {
+      return new JsonResponse([
+        'error' => [
+          'code' => 'invalid_json',
+          'message' => 'Request body must be valid JSON',
+        ],
+      ], 400);
+    }
+
     // Validate required parameters.
     if (!isset($data['name']) || !is_string($data['name'])) {
       return new JsonResponse([
@@ -221,7 +231,7 @@ class McpToolsController extends ControllerBase {
 
       $rpc_response = reset($rpc_responses);
 
-      if ($rpc_response->isError()) {
+      if ($rpc_response->isErrorResponse()) {
         $error = $rpc_response->getError();
         return new JsonResponse([
           'error' => [

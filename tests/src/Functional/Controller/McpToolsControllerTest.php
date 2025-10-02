@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\jsonrpc_mcp\Functional\Controller;
 
+use Drupal\Component\Serialization\Json;
 use Drupal\Tests\BrowserTestBase;
+use GuzzleHttp\RequestOptions;
 
 /**
  * Functional tests for the MCP tools discovery endpoint.
@@ -41,9 +43,11 @@ class McpToolsControllerTest extends BrowserTestBase {
   protected function setUp(): void {
     parent::setUp();
 
-    // Grant anonymous users the 'access content' permission so they can
-    // see the example tools which require this permission.
-    user_role_grant_permissions('anonymous', ['access content']);
+    // Grant anonymous users the necessary permissions to access MCP tools.
+    user_role_grant_permissions('anonymous', [
+      'access content',
+      'access mcp tool discovery',
+    ]);
   }
 
   /**
@@ -189,14 +193,17 @@ class McpToolsControllerTest extends BrowserTestBase {
     }
 
     // Section 6: Authenticated user with permissions.
-    // Create a user with 'access content' permission.
-    $user = $this->drupalCreateUser(['access content']);
+    // Create a user with both permissions.
+    $user = $this->drupalCreateUser([
+      'access content',
+      'access mcp tool discovery',
+    ]);
     $this->drupalLogin($user);
 
     $this->drupalGet('/mcp/tools/list');
     $user_data = json_decode($this->getSession()->getPage()->getContent(), TRUE);
 
-    // User with 'access content' should see all example tools.
+    // User with permissions should see all example tools.
     $user_tool_names = array_column($user_data['tools'], 'name');
     $this->assertContains('examples.contentTypes.list', $user_tool_names);
     $this->assertContains('examples.articles.list', $user_tool_names);
@@ -213,6 +220,211 @@ class McpToolsControllerTest extends BrowserTestBase {
 
     $this->assertNotNull($content_types_tool, 'Should find examples.contentTypes.list tool');
     $this->assertEquals('Lists all available content types', $content_types_tool['description']);
+  }
+
+  /**
+   * Tests list endpoint returns 403 without permission.
+   */
+  public function testListEndpointPermissionDenied(): void {
+    // Create user WITHOUT the MCP discovery permission.
+    $user = $this->drupalCreateUser(['access content']);
+    $this->drupalLogin($user);
+
+    $this->drupalGet('/mcp/tools/list');
+    $this->assertSession()->statusCodeEquals(403);
+  }
+
+  /**
+   * Tests describe endpoint returns tool details with permission.
+   */
+  public function testDescribeEndpointSuccess(): void {
+    $user = $this->drupalCreateUser([
+      'access content',
+      'access mcp tool discovery',
+    ]);
+    $this->drupalLogin($user);
+
+    $this->drupalGet('/mcp/tools/describe', [
+      'query' => ['name' => 'examples.contentTypes.list'],
+    ]);
+    $this->assertSession()->statusCodeEquals(200);
+
+    $response = $this->getSession()->getPage()->getContent();
+    $data = json_decode($response, TRUE);
+
+    $this->assertArrayHasKey('tool', $data);
+    $tool = $data['tool'];
+
+    $this->assertEquals('examples.contentTypes.list', $tool['name']);
+    $this->assertEquals('Lists all available content types', $tool['description']);
+    $this->assertArrayHasKey('inputSchema', $tool);
+  }
+
+  /**
+   * Tests describe endpoint returns 403 without permission.
+   */
+  public function testDescribeEndpointPermissionDenied(): void {
+    $user = $this->drupalCreateUser(['access content']);
+    $this->drupalLogin($user);
+
+    $this->drupalGet('/mcp/tools/describe', [
+      'query' => ['name' => 'examples.contentTypes.list'],
+    ]);
+    $this->assertSession()->statusCodeEquals(403);
+  }
+
+  /**
+   * Tests describe endpoint returns 404 for non-existent tool.
+   */
+  public function testDescribeEndpointToolNotFound(): void {
+    $user = $this->drupalCreateUser([
+      'access content',
+      'access mcp tool discovery',
+    ]);
+    $this->drupalLogin($user);
+
+    $this->drupalGet('/mcp/tools/describe', [
+      'query' => ['name' => 'nonexistent.tool'],
+    ]);
+    $this->assertSession()->statusCodeEquals(404);
+
+    $response = $this->getSession()->getPage()->getContent();
+    $data = json_decode($response, TRUE);
+
+    $this->assertArrayHasKey('error', $data);
+    $this->assertEquals('tool_not_found', $data['error']['code']);
+  }
+
+  /**
+   * Tests describe endpoint returns 400 for missing name parameter.
+   */
+  public function testDescribeEndpointMissingParameter(): void {
+    $user = $this->drupalCreateUser([
+      'access content',
+      'access mcp tool discovery',
+    ]);
+    $this->drupalLogin($user);
+
+    $this->drupalGet('/mcp/tools/describe');
+    $this->assertSession()->statusCodeEquals(400);
+
+    $response = $this->getSession()->getPage()->getContent();
+    $data = json_decode($response, TRUE);
+
+    $this->assertArrayHasKey('error', $data);
+    $this->assertEquals('missing_parameter', $data['error']['code']);
+  }
+
+  /**
+   * Tests invoke endpoint successfully executes a tool.
+   */
+  public function testInvokeEndpointSuccess(): void {
+    $user = $this->drupalCreateUser(['access content']);
+    $this->drupalLogin($user);
+
+    $url = $this->buildUrl('/mcp/tools/invoke');
+    $client = $this->getHttpClient();
+
+    $response = $client->request('POST', $url, [
+      RequestOptions::HTTP_ERRORS => FALSE,
+      RequestOptions::COOKIES => $this->getSessionCookies(),
+      RequestOptions::HEADERS => ['Content-Type' => 'application/json'],
+      RequestOptions::BODY => Json::encode([
+        'name' => 'examples.contentTypes.list',
+        'arguments' => [],
+      ]),
+    ]);
+
+    $this->assertEquals(200, $response->getStatusCode());
+
+    $body = (string) $response->getBody();
+    $data = Json::decode($body);
+    $this->assertArrayHasKey('result', $data);
+    $this->assertIsArray($data['result']);
+  }
+
+  /**
+   * Tests invoke endpoint returns 404 for non-existent tool.
+   */
+  public function testInvokeEndpointToolNotFound(): void {
+    $user = $this->drupalCreateUser(['access content']);
+    $this->drupalLogin($user);
+
+    $url = $this->buildUrl('/mcp/tools/invoke');
+    $client = $this->getHttpClient();
+
+    $response = $client->request('POST', $url, [
+      RequestOptions::HTTP_ERRORS => FALSE,
+      RequestOptions::COOKIES => $this->getSessionCookies(),
+      RequestOptions::HEADERS => ['Content-Type' => 'application/json'],
+      RequestOptions::BODY => Json::encode([
+        'name' => 'nonexistent.tool',
+        'arguments' => [],
+      ]),
+    ]);
+
+    $this->assertEquals(404, $response->getStatusCode());
+
+    $body = (string) $response->getBody();
+    $this->assertNotEmpty($body, 'Response body should not be empty');
+    $data = Json::decode($body);
+    $this->assertArrayHasKey('error', $data);
+    $this->assertEquals('tool_not_found', $data['error']['code']);
+  }
+
+  /**
+   * Tests invoke endpoint returns 400 for malformed request.
+   */
+  public function testInvokeEndpointMalformedRequest(): void {
+    $user = $this->drupalCreateUser(['access content']);
+    $this->drupalLogin($user);
+
+    $url = $this->buildUrl('/mcp/tools/invoke');
+    $client = $this->getHttpClient();
+
+    // Test missing 'name'.
+    $response = $client->request('POST', $url, [
+      RequestOptions::HTTP_ERRORS => FALSE,
+      RequestOptions::COOKIES => $this->getSessionCookies(),
+      RequestOptions::HEADERS => ['Content-Type' => 'application/json'],
+      RequestOptions::BODY => Json::encode([
+        'arguments' => [],
+      ]),
+    ]);
+
+    $this->assertEquals(400, $response->getStatusCode());
+
+    $body = (string) $response->getBody();
+    $this->assertNotEmpty($body, 'Response body should not be empty');
+    $data = Json::decode($body);
+    $this->assertArrayHasKey('error', $data);
+    $this->assertEquals('missing_parameter', $data['error']['code']);
+  }
+
+  /**
+   * Tests invoke endpoint returns 400 for invalid JSON.
+   */
+  public function testInvokeEndpointInvalidJson(): void {
+    $user = $this->drupalCreateUser(['access content']);
+    $this->drupalLogin($user);
+
+    $url = $this->buildUrl('/mcp/tools/invoke');
+    $client = $this->getHttpClient();
+
+    $response = $client->request('POST', $url, [
+      RequestOptions::HTTP_ERRORS => FALSE,
+      RequestOptions::COOKIES => $this->getSessionCookies(),
+      RequestOptions::HEADERS => ['Content-Type' => 'application/json'],
+      RequestOptions::BODY => '{invalid json}',
+    ]);
+
+    $this->assertEquals(400, $response->getStatusCode());
+
+    $body = (string) $response->getBody();
+    $this->assertNotEmpty($body, 'Response body should not be empty');
+    $data = Json::decode($body);
+    $this->assertArrayHasKey('error', $data);
+    $this->assertEquals('invalid_json', $data['error']['code']);
   }
 
 }
