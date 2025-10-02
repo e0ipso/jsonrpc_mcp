@@ -148,15 +148,47 @@ This automatically generates the MCP tool schema:
 
 ## Discovery Endpoints
 
-### Primary: `/mcp/tools/list`
+The module provides three complementary endpoints for MCP tool discovery and invocation following a standard workflow:
 
-MCP-compliant tool listing endpoint with pagination support following the [MCP tools/list specification](https://modelcontextprotocol.io/specification/2025-06-18/server/tools):
+### Discovery Workflow
 
-**Request:**
+1. **List Tools** → Query `/mcp/tools/list` to discover all accessible tools
+   - Supports pagination for sites with many tools
+   - Returns tool names, descriptions, and input schemas
 
-```http
-GET /mcp/tools/list
-GET /mcp/tools/list?cursor=abc123
+2. **Describe Tool (Optional)** → Query `/mcp/tools/describe?name=X` for detailed schema
+   - Useful for dynamic form generation or validation
+   - Returns complete input/output schemas and annotations
+
+3. **Invoke Tool** → POST to `/mcp/tools/invoke` to execute the tool
+   - Requires tool name and arguments
+   - Returns results or error information
+
+### When to Use Each Endpoint
+
+**Use `/mcp/tools/list` when:**
+
+- Discovering what tools are available
+- Building a tool catalog
+- The basic metadata (name, title, description) is sufficient
+
+**Use `/mcp/tools/describe` when:**
+
+- You need complete schema details
+- Building dynamic forms or validation logic
+- Generating client code or documentation
+
+**Use `/mcp/tools/invoke` when:**
+
+- Executing a tool with prepared arguments
+- User/system is ready to perform the action
+
+### Quick Examples
+
+**List available tools:**
+
+```bash
+curl https://your-site.com/mcp/tools/list | jq
 ```
 
 **Response:**
@@ -171,13 +203,6 @@ GET /mcp/tools/list?cursor=abc123
       "inputSchema": {
         "type": "object",
         "properties": {}
-      },
-      "outputSchema": {
-        "type": "boolean"
-      },
-      "annotations": {
-        "category": "system",
-        "destructive": false
       }
     }
   ],
@@ -185,49 +210,18 @@ GET /mcp/tools/list?cursor=abc123
 }
 ```
 
-### Additional: `/mcp/tools/describe`
+**Describe a specific tool:**
 
-Returns detailed schema for specific tools following the [MCP tools/describe specification](https://modelcontextprotocol.io/specification/2025-06-18/server/tools):
-
-**Request:**
-
-```http
-GET /mcp/tools/describe?name=cache.rebuild
+```bash
+curl "https://your-site.com/mcp/tools/describe?name=cache.rebuild" | jq
 ```
 
-**Response:**
+**Invoke a tool:**
 
-```json
-{
-  "tool": {
-    "name": "cache.rebuild",
-    "title": "Rebuild Drupal Cache",
-    "description": "Rebuilds the Drupal system cache.",
-    "inputSchema": {
-      "type": "object",
-      "properties": {}
-    },
-    "outputSchema": {
-      "type": "boolean"
-    }
-  }
-}
-```
-
-### Invocation: `/mcp/tools/invoke`
-
-Executes a tool with provided arguments following the [MCP tools/call specification](https://modelcontextprotocol.io/specification/2025-06-18/server/tools):
-
-**Request:**
-
-```http
-POST /mcp/tools/invoke
-Content-Type: application/json
-
-{
-  "name": "cache.rebuild",
-  "arguments": {}
-}
+```bash
+curl -X POST https://your-site.com/mcp/tools/invoke \
+  -H "Content-Type: application/json" \
+  -d '{"name": "cache.rebuild", "arguments": {}}'
 ```
 
 **Response:**
@@ -237,6 +231,32 @@ Content-Type: application/json
   "result": true
 }
 ```
+
+### Pagination
+
+When dealing with many tools, use cursor-based pagination:
+
+```bash
+# First request
+curl https://your-site.com/mcp/tools/list
+
+# Response includes nextCursor
+{
+  "tools": [...],
+  "nextCursor": "NTA="
+}
+
+# Follow nextCursor for more results
+curl https://your-site.com/mcp/tools/list?cursor=NTA=
+
+# Continue until nextCursor is null
+{
+  "tools": [...],
+  "nextCursor": null
+}
+```
+
+> 💡 **For complete API documentation** including all parameters, status codes, error formats, and security details, see the [API Reference](#api-reference) section below.
 
 ## API Reference
 
