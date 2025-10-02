@@ -1,0 +1,3 @@
+access mcp tool discovery:
+  title: 'Access MCP tool discovery'
+  description: 'Allows users to view available MCP tools and their schemas via /mcp/tools/list and /mcp/tools/describe endpoints.'
