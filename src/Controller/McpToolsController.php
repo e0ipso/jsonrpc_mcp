@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Drupal\jsonrpc_mcp\Controller;
 
 use Drupal\Component\Serialization\Json;
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheableJsonResponse;
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\jsonrpc\Exception\JsonRpcException;
 use Drupal\jsonrpc\HandlerInterface;
@@ -90,10 +92,19 @@ class McpToolsController extends ControllerBase {
       $next_cursor = base64_encode((string) ($offset + $page_size));
     }
 
-    return new CacheableJsonResponse([
+    $response = new CacheableJsonResponse([
       'tools' => $normalized_tools,
       'nextCursor' => $next_cursor,
     ]);
+
+    $cache_metadata = new CacheableMetadata();
+    $cache_metadata->setCacheMaxAge(Cache::PERMANENT);
+    $cache_metadata->setCacheTags(['jsonrpc_mcp:discovery', 'user.permissions']);
+    $cache_metadata->setCacheContexts(['user', 'url.query_args:cursor']);
+
+    $response->addCacheableDependency($cache_metadata);
+
+    return $response;
   }
 
   /**
@@ -112,30 +123,53 @@ class McpToolsController extends ControllerBase {
     $name = $request->query->get('name');
 
     if (!$name) {
-      return new CacheableJsonResponse([
+      $response = new CacheableJsonResponse([
         'error' => [
           'code' => 'missing_parameter',
           'message' => 'Required parameter "name" is missing',
         ],
       ], 400);
+
+      $cache_metadata = new CacheableMetadata();
+      $cache_metadata->setCacheMaxAge(0);
+
+      $response->addCacheableDependency($cache_metadata);
+
+      return $response;
     }
 
     $tools = $this->toolDiscovery->discoverTools();
 
     if (!isset($tools[$name])) {
-      return new CacheableJsonResponse([
+      $response = new CacheableJsonResponse([
         'error' => [
           'code' => 'tool_not_found',
           'message' => sprintf("Tool '%s' not found or access denied", $name),
         ],
       ], 404);
+
+      $cache_metadata = new CacheableMetadata();
+      $cache_metadata->setCacheMaxAge(0);
+
+      $response->addCacheableDependency($cache_metadata);
+
+      return $response;
     }
 
     $normalized_tool = $this->normalizer->normalize($tools[$name]);
 
-    return new CacheableJsonResponse([
+    $response = new CacheableJsonResponse([
       'tool' => $normalized_tool,
     ]);
+
+    $cache_metadata = new CacheableMetadata();
+    $cache_metadata->setCacheMaxAge(Cache::PERMANENT);
+    $cache_metadata->setCacheTags(['jsonrpc_mcp:discovery', 'user.permissions']);
+    $cache_metadata->setCacheContexts(['user', 'url.query_args:name']);
+
+    $response->addCacheableDependency($cache_metadata);
+
+    return $response;
   }
 
   /**
@@ -158,41 +192,69 @@ class McpToolsController extends ControllerBase {
       $data = Json::decode($content);
     }
     catch (\Exception $e) {
-      return new CacheableJsonResponse([
+      $response = new CacheableJsonResponse([
         'error' => [
           'code' => 'invalid_json',
           'message' => 'Request body must be valid JSON',
         ],
       ], 400);
+
+      $cache_metadata = new CacheableMetadata();
+      $cache_metadata->setCacheMaxAge(0);
+
+      $response->addCacheableDependency($cache_metadata);
+
+      return $response;
     }
 
     // Validate JSON decode success.
     if ($data === NULL || !is_array($data)) {
-      return new CacheableJsonResponse([
+      $response = new CacheableJsonResponse([
         'error' => [
           'code' => 'invalid_json',
           'message' => 'Request body must be valid JSON',
         ],
       ], 400);
+
+      $cache_metadata = new CacheableMetadata();
+      $cache_metadata->setCacheMaxAge(0);
+
+      $response->addCacheableDependency($cache_metadata);
+
+      return $response;
     }
 
     // Validate required parameters.
     if (!isset($data['name']) || !is_string($data['name'])) {
-      return new CacheableJsonResponse([
+      $response = new CacheableJsonResponse([
         'error' => [
           'code' => 'missing_parameter',
           'message' => 'Required parameter "name" is missing or invalid',
         ],
       ], 400);
+
+      $cache_metadata = new CacheableMetadata();
+      $cache_metadata->setCacheMaxAge(0);
+
+      $response->addCacheableDependency($cache_metadata);
+
+      return $response;
     }
 
     if (!isset($data['arguments']) || !is_array($data['arguments'])) {
-      return new CacheableJsonResponse([
+      $response = new CacheableJsonResponse([
         'error' => [
           'code' => 'missing_parameter',
           'message' => 'Required parameter "arguments" is missing or invalid',
         ],
       ], 400);
+
+      $cache_metadata = new CacheableMetadata();
+      $cache_metadata->setCacheMaxAge(0);
+
+      $response->addCacheableDependency($cache_metadata);
+
+      return $response;
     }
 
     $name = $data['name'];
@@ -202,12 +264,19 @@ class McpToolsController extends ControllerBase {
     $tools = $this->toolDiscovery->discoverTools();
 
     if (!isset($tools[$name])) {
-      return new CacheableJsonResponse([
+      $response = new CacheableJsonResponse([
         'error' => [
           'code' => 'tool_not_found',
           'message' => sprintf("Tool '%s' not found or access denied", $name),
         ],
       ], 404);
+
+      $cache_metadata = new CacheableMetadata();
+      $cache_metadata->setCacheMaxAge(0);
+
+      $response->addCacheableDependency($cache_metadata);
+
+      return $response;
     }
 
     // Execute via JSON-RPC handler.
@@ -219,45 +288,80 @@ class McpToolsController extends ControllerBase {
 
       // Extract result from JSON-RPC response.
       if (empty($rpc_responses)) {
-        return new CacheableJsonResponse([
+        $response = new CacheableJsonResponse([
           'error' => [
             'code' => 'execution_error',
             'message' => 'Tool execution returned no response',
           ],
         ], 500);
+
+        $cache_metadata = new CacheableMetadata();
+        $cache_metadata->setCacheMaxAge(0);
+
+        $response->addCacheableDependency($cache_metadata);
+
+        return $response;
       }
 
       $rpc_response = reset($rpc_responses);
 
       if ($rpc_response->isErrorResponse()) {
         $error = $rpc_response->getError();
-        return new CacheableJsonResponse([
+        $response = new CacheableJsonResponse([
           'error' => [
             'code' => 'execution_error',
             'message' => $error->getMessage(),
           ],
         ], 500);
+
+        $cache_metadata = new CacheableMetadata();
+        $cache_metadata->setCacheMaxAge(0);
+
+        $response->addCacheableDependency($cache_metadata);
+
+        return $response;
       }
 
-      return new CacheableJsonResponse([
+      $response = new CacheableJsonResponse([
         'result' => $rpc_response->getResult(),
       ]);
+
+      $cache_metadata = new CacheableMetadata();
+      $cache_metadata->setCacheMaxAge(0);
+
+      $response->addCacheableDependency($cache_metadata);
+
+      return $response;
     }
     catch (JsonRpcException $e) {
-      return new CacheableJsonResponse([
+      $response = new CacheableJsonResponse([
         'error' => [
           'code' => 'execution_error',
           'message' => sprintf('Tool execution failed: %s', $e->getMessage()),
         ],
       ], 500);
+
+      $cache_metadata = new CacheableMetadata();
+      $cache_metadata->setCacheMaxAge(0);
+
+      $response->addCacheableDependency($cache_metadata);
+
+      return $response;
     }
     catch (\Exception $e) {
-      return new CacheableJsonResponse([
+      $response = new CacheableJsonResponse([
         'error' => [
           'code' => 'execution_error',
           'message' => sprintf('Tool execution failed: %s', $e->getMessage()),
         ],
       ], 500);
+
+      $cache_metadata = new CacheableMetadata();
+      $cache_metadata->setCacheMaxAge(0);
+
+      $response->addCacheableDependency($cache_metadata);
+
+      return $response;
     }
   }
 
