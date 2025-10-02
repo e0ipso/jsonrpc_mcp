@@ -455,18 +455,19 @@ class ExampleMethodsTest extends BrowserTestBase {
    */
   protected function postJson(string $path, array $data): string {
     $url = $this->buildUrl($path);
-    $request_options = [
-      RequestOptions::HTTP_ERRORS => FALSE,
-      RequestOptions::ALLOW_REDIRECTS => FALSE,
-      RequestOptions::JSON => $data,
-      // Include session cookies for authentication.
-      RequestOptions::COOKIES => $this->getSessionCookies(),
-    ];
 
-    $client = $this->getHttpClient();
-    $response = $client->request('POST', $url, $request_options);
+    // Use Mink session which maintains cookies from drupalLogin().
+    $session = $this->getSession();
+    $session->getDriver()->getClient()->request(
+      'POST',
+      $url,
+      [],
+      [],
+      ['CONTENT_TYPE' => 'application/json'],
+      json_encode($data)
+    );
 
-    return (string) $response->getBody();
+    return $session->getPage()->getContent();
   }
 
   /**
