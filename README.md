@@ -1,10 +1,10 @@
 # JSON-RPC MCP Bridge
 
-A Drupal module that exposes JSON-RPC method plugins as MCP (Model Context Protocol) tools, enabling seamless integration between Drupal and MCP-compatible AI assistants like Claude Desktop.
+A Drupal module that exposes JSON-RPC method plugins as MCP ([Model Context Protocol](https://modelcontextprotocol.io/specification/2025-06-18/server/tools)) tools, enabling seamless integration between Drupal and MCP-compatible AI assistants like Claude Desktop.
 
 ## Overview
 
-The Model Context Protocol (MCP) is an open standard introduced by Anthropic that enables AI systems to discover and interact with external tools and data sources. This module bridges Drupal's JSON-RPC infrastructure with MCP, allowing Drupal sites to be discovered and used as MCP servers.
+The [Model Context Protocol (MCP) specification (2025-06-18)](https://modelcontextprotocol.io/specification/2025-06-18/server/tools) is an open standard introduced by Anthropic that enables AI systems to discover and interact with external tools and data sources. This module bridges Drupal's JSON-RPC infrastructure with MCP, allowing Drupal sites to be discovered and used as MCP servers.
 
 ### Key Features
 
@@ -150,7 +150,7 @@ This automatically generates the MCP tool schema:
 
 ### Primary: `/mcp/tools/list`
 
-MCP-compliant tool listing endpoint with pagination support:
+MCP-compliant tool listing endpoint with pagination support following the [MCP tools/list specification](https://modelcontextprotocol.io/specification/2025-06-18/server/tools):
 
 **Request:**
 
@@ -185,6 +185,200 @@ GET /mcp/tools/list?cursor=abc123
 }
 ```
 
+### Additional: `/mcp/tools/describe`
+
+Returns detailed schema for specific tools following the [MCP tools/describe specification](https://modelcontextprotocol.io/specification/2025-06-18/server/tools):
+
+**Request:**
+
+```http
+GET /mcp/tools/describe?name=cache.rebuild
+```
+
+**Response:**
+
+```json
+{
+  "tool": {
+    "name": "cache.rebuild",
+    "title": "Rebuild Drupal Cache",
+    "description": "Rebuilds the Drupal system cache.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "outputSchema": {
+      "type": "boolean"
+    }
+  }
+}
+```
+
+### Invocation: `/mcp/tools/invoke`
+
+Executes a tool with provided arguments following the [MCP tools/call specification](https://modelcontextprotocol.io/specification/2025-06-18/server/tools):
+
+**Request:**
+
+```http
+POST /mcp/tools/invoke
+Content-Type: application/json
+
+{
+  "name": "cache.rebuild",
+  "arguments": {}
+}
+```
+
+**Response:**
+
+```json
+{
+  "result": true
+}
+```
+
+## API Reference
+
+### Authentication
+
+All MCP endpoints inherit access control from the underlying JSON-RPC methods:
+
+- Authentication uses standard Drupal mechanisms (session cookies, OAuth, HTTP Basic)
+- Permissions are inherited from the `access` parameter in `#[JsonRpcMethod]`
+- All permissions in the `access` array must be satisfied (AND logic)
+- Users must have appropriate permissions to discover or invoke tools
+
+### GET /mcp/tools/list
+
+Lists all available MCP tools with pagination support.
+
+**Parameters:**
+
+| Parameter | Type   | Required | Description                                             |
+| --------- | ------ | -------- | ------------------------------------------------------- |
+| `cursor`  | string | No       | Base64-encoded pagination cursor from previous response |
+
+**Response (200 OK):**
+
+```json
+{
+  "tools": [
+    {
+      "name": "string",
+      "description": "string",
+      "inputSchema": {},
+      "title": "string (optional)",
+      "outputSchema": {} | "optional)",
+      "annotations": {}  | "(optional)"
+    }
+  ],
+  "nextCursor": "string|null"
+}
+```
+
+**Pagination:**
+
+- Page size: 50 tools per request
+- Cursor format: Base64-encoded integer offset
+- `nextCursor` is `null` when no more results exist
+
+**Status Codes:**
+
+| Code | Description             |
+| ---- | ----------------------- |
+| 200  | Success                 |
+| 400  | Invalid cursor format   |
+| 401  | Authentication required |
+| 403  | Access denied           |
+| 500  | Server error            |
+
+### GET /mcp/tools/describe
+
+Returns detailed schema information for a specific tool.
+
+**Parameters:**
+
+| Parameter | Type   | Required | Description                       |
+| --------- | ------ | -------- | --------------------------------- |
+| `name`    | string | Yes      | Tool identifier (query parameter) |
+
+**Response (200 OK):**
+
+```json
+{
+  "tool": {
+    "name": "string",
+    "description": "string",
+    "inputSchema": {},
+    "outputSchema": {},
+    "title": "string (optional)",
+    "annotations": {} (optional)"
+  }
+}
+```
+
+**Error Response (400/404):**
+
+```json
+{
+  "error": {
+    "code": "missing_parameter|tool_not_found",
+    "message": "Error description"
+  }
+}
+```
+
+**Status Codes:**
+
+| Code | Description                         |
+| ---- | ----------------------------------- |
+| 200  | Success                             |
+| 400  | Missing or invalid `name` parameter |
+| 404  | Tool not found or access denied     |
+| 500  | Server error                        |
+
+### POST /mcp/tools/invoke
+
+Invokes a tool with the provided arguments.
+
+**Request Body:**
+
+```json
+{
+  "name": "string",
+  "arguments": {}
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "result": "any type matching tool's outputSchema"
+}
+```
+
+**Error Response:**
+
+```json
+{
+  "error": {
+    "code": "invalid_json|missing_parameter|tool_not_found|execution_error",
+    "message": "Error description"
+  }
+}
+```
+
+**Status Codes:**
+
+| Code | Description                                        |
+| ---- | -------------------------------------------------- |
+| 200  | Success                                            |
+| 400  | Invalid JSON, missing fields, or invalid arguments |
+| 404  | Tool not found or access denied                    |
+| 500  | Execution error                                    |
+
 ## Development
 
 ### Creating Custom MCP Tools
@@ -215,6 +409,14 @@ GET /mcp/tools/list?cursor=abc123
    ```bash
    curl https://your-site.com/mcp/tools/list | jq '.tools[] | select(.name == "your.method")'
    ```
+
+## References
+
+- [Model Context Protocol Specification (2025-06-18)](https://modelcontextprotocol.io/specification/2025-06-18/server/tools) - Official MCP specification
+- [MCP Server Tools](https://modelcontextprotocol.io/specification/2025-06-18/server/tools) - Server-side tool implementation guide
+- [MCP Tool Discovery](https://modelcontextprotocol.io/specification/2025-06-18/server/tools) - Tool discovery protocol
+- [JSON Schema Draft 7](https://json-schema.org/draft-07/schema) - Schema specification used by MCP
+- [Drupal JSON-RPC Module](https://www.drupal.org/project/jsonrpc) - Base JSON-RPC infrastructure
 
 ## License
 
