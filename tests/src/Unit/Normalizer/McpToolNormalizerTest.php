@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\jsonrpc_mcp\Unit\Normalizer;
 
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\jsonrpc\Attribute\JsonRpcParameterDefinition;
 use Drupal\jsonrpc\MethodInterface;
 use Drupal\jsonrpc_mcp\Normalizer\McpToolNormalizer;
@@ -33,6 +34,21 @@ class McpToolNormalizerTest extends TestCase {
   }
 
   /**
+   * Creates a mock TranslatableMarkup that returns a string.
+   *
+   * @param string $string
+   *   The string to return.
+   *
+   * @return \Drupal\Core\StringTranslation\TranslatableMarkup
+   *   The mocked TranslatableMarkup.
+   */
+  protected function createMockTranslatableMarkup(string $string): TranslatableMarkup {
+    $mock = $this->createMock(TranslatableMarkup::class);
+    $mock->method('__toString')->willReturn($string);
+    return $mock;
+  }
+
+  /**
    * Tests JSON-RPC to MCP schema transformation with minimal method.
    *
    * Validates the core transformation logic from JSON-RPC method definition
@@ -47,7 +63,7 @@ class McpToolNormalizerTest extends TestCase {
     $method->method('id')
       ->willReturn('test.method');
     $method->method('getUsage')
-      ->willReturn('Test description');
+      ->willReturn($this->createMockTranslatableMarkup('Test description'));
     $method->method('getParams')
       ->willReturn([]);
     $method->method('getClass')
@@ -80,7 +96,7 @@ class McpToolNormalizerTest extends TestCase {
     $method->method('id')
       ->willReturn('test.method');
     $method->method('getUsage')
-      ->willReturn('Test description');
+      ->willReturn($this->createMockTranslatableMarkup('Test description'));
     $method->method('getParams')
       ->willReturn([]);
     $method->method('getClass')
@@ -106,7 +122,7 @@ class McpToolNormalizerTest extends TestCase {
     $method->method('id')
       ->willReturn('test.method');
     $method->method('getUsage')
-      ->willReturn('Test description');
+      ->willReturn($this->createMockTranslatableMarkup('Test description'));
     $method->method('getParams')
       ->willReturn([]);
     $method->method('getClass')
@@ -131,7 +147,7 @@ class McpToolNormalizerTest extends TestCase {
     $method->method('id')
       ->willReturn('test.method');
     $method->method('getUsage')
-      ->willReturn('Test description');
+      ->willReturn($this->createMockTranslatableMarkup('Test description'));
     $method->method('getParams')
       ->willReturn([]);
     $method->method('getClass')
@@ -172,7 +188,7 @@ class McpToolNormalizerTest extends TestCase {
     $method->method('id')
       ->willReturn('test.method');
     $method->method('getUsage')
-      ->willReturn('Test');
+      ->willReturn($this->createMockTranslatableMarkup('Test'));
     $method->method('getParams')
       ->willReturn(['name' => $param1, 'age' => $param2]);
     $method->method('getClass')
@@ -212,7 +228,7 @@ class McpToolNormalizerTest extends TestCase {
     $method->method('id')
       ->willReturn('test.method');
     $method->method('getUsage')
-      ->willReturn('Test');
+      ->willReturn($this->createMockTranslatableMarkup('Test'));
     $method->method('getParams')
       ->willReturn(['required_field' => $param1, 'optional_field' => $param2]);
     $method->method('getClass')
@@ -242,13 +258,13 @@ class McpToolNormalizerTest extends TestCase {
     $param1 = new JsonRpcParameterDefinition(
       id: 'required_param',
       schema: ['type' => 'string'],
-      description: 'Required parameter',
+      description: $this->createMockTranslatableMarkup('Required parameter'),
       required: TRUE,
     );
     $param2 = new JsonRpcParameterDefinition(
       id: 'optional_param',
       schema: ['type' => 'integer', 'minimum' => 0],
-      description: 'Optional parameter',
+      description: $this->createMockTranslatableMarkup('Optional parameter'),
       required: FALSE,
     );
 
@@ -256,7 +272,7 @@ class McpToolNormalizerTest extends TestCase {
     $method->method('id')
       ->willReturn('complete.method');
     $method->method('getUsage')
-      ->willReturn('Complete method with all features');
+      ->willReturn($this->createMockTranslatableMarkup('Complete method with all features'));
     $method->method('getParams')
       ->willReturn(['required_param' => $param1, 'optional_param' => $param2]);
     $method->method('getClass')
