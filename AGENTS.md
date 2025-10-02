@@ -68,6 +68,47 @@ MCP Tool Normalizer (converts to MCP schema)
 /mcp/tools/list endpoint (returns MCP-compliant JSON)
 ```
 
+### Caching Implementation
+
+The module implements comprehensive caching for discovery endpoints to optimize performance:
+
+**Cache Strategy:**
+
+- **Discovery endpoints** (`/mcp/tools/list`, `/mcp/tools/describe`): Permanent caching via `CacheableJsonResponse`
+- **Invoke endpoint** (`/mcp/tools/invoke`): Never cached (executes state-changing operations)
+- **Error responses**: Never cached (max-age 0)
+
+**Cache Tags:**
+
+- `jsonrpc_mcp:discovery`: Custom module cache tag, invalidated when:
+  - Modules are installed/uninstalled (`hook_modules_installed()`, `hook_modules_uninstalled()`)
+  - Cache is manually rebuilt (`drush cache:rebuild`)
+  - Programmatic invalidation via `McpToolDiscoveryService::invalidateDiscoveryCache()`
+- `user.permissions`: Automatically invalidated by Drupal core when permissions change
+
+**Cache Contexts:**
+
+- `user`: Responses vary by user (permission-based tool filtering)
+- `url.query_args:cursor`: Separate cache for each pagination cursor (list endpoint)
+- `url.query_args:name`: Separate cache for each tool name (describe endpoint)
+
+**Performance:**
+
+- First request: Full plugin discovery + normalization
+- Subsequent requests: Served from page cache (no PHP execution)
+- Cache invalidation: Lazy regeneration on next request
+
+**Debugging:**
+
+```bash
+# Clear discovery cache manually
+drush php:eval "\Drupal::service('jsonrpc_mcp.tool_discovery')->invalidateDiscoveryCache();"
+
+# Test cache behavior
+curl -I /mcp/tools/list  # Check cache headers
+drush cr && curl /mcp/tools/list | jq  # Fresh discovery after cache clear
+```
+
 ### Key Mapping Rules
 
 JSON-RPC to MCP transformation:
