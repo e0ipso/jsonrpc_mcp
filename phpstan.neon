@@ -9,3 +9,4 @@ parameters:
     - '#Trying to mock an undefined method .* on class .*ContextRepositoryInterface#'
     - '#Trait Drupal\\jsonrpc_mcp\\Trait\\DebugLoggingTrait is used zero times and is not analysed#'
     - '#Unsafe usage of new static\(\)#'
+    - '#Parameter \$description of class Drupal\\jsonrpc\\Attribute\\JsonRpcParameterDefinition constructor expects Drupal\\Core\\StringTranslation\\TranslatableMarkup\|null, string given\.#'

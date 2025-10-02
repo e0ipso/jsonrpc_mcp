@@ -239,14 +239,12 @@ class McpToolNormalizerTest extends TestCase {
    * @covers ::extractMcpToolData
    */
   public function testNormalizeWithAllFeatures(): void {
-    // @phpstan-ignore-next-line - Passing string instead of TranslatableMarkup for simplicity in unit tests
     $param1 = new JsonRpcParameterDefinition(
       id: 'required_param',
       schema: ['type' => 'string'],
       description: 'Required parameter',
       required: TRUE,
     );
-    // @phpstan-ignore-next-line - Passing string instead of TranslatableMarkup for simplicity in unit tests
     $param2 = new JsonRpcParameterDefinition(
       id: 'optional_param',
       schema: ['type' => 'integer', 'minimum' => 0],
