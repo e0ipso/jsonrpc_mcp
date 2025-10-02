@@ -25,6 +25,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * MCP-compliant tool discovery with cursor-based pagination. It coordinates
  * the McpToolDiscoveryService and McpToolNormalizer to return JSON-RPC
  * methods marked with the #[McpTool] attribute in MCP tool schema format.
+ *
+ * Cache tags used:
+ * - jsonrpc_mcp:discovery: Invalidated when modules install/uninstall or
+ *   when plugin definitions change.
+ * - user.permissions: Automatically invalidated when permission system changes.
  */
 class McpToolsController extends ControllerBase {
 

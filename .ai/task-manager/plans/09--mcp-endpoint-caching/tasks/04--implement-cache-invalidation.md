@@ -2,7 +2,7 @@
 id: 4
 group: 'cache-invalidation'
 dependencies: [3]
-status: 'pending'
+status: 'completed'
 created: '2025-10-02'
 skills:
   - drupal-backend
@@ -22,11 +22,11 @@ Add cache tag invalidation logic that clears the `jsonrpc_mcp:discovery` cache t
 
 ## Acceptance Criteria
 
-- [ ] `jsonrpc_mcp:discovery` cache tag is invalidated on module install
-- [ ] `jsonrpc_mcp:discovery` cache tag is invalidated on module uninstall
-- [ ] `jsonrpc_mcp:discovery` cache tag is invalidated on cache rebuild
-- [ ] Service method `McpToolDiscoveryService::invalidateDiscoveryCache()` is implemented
-- [ ] Cache invalidation is triggered through proper Drupal APIs
+- [x] `jsonrpc_mcp:discovery` cache tag is invalidated on module install
+- [x] `jsonrpc_mcp:discovery` cache tag is invalidated on module uninstall
+- [x] `jsonrpc_mcp:discovery` cache tag is invalidated on cache rebuild
+- [x] Service method `McpToolDiscoveryService::invalidateDiscoveryCache()` is implemented
+- [x] Cache invalidation is triggered through proper Drupal APIs
 
 ## Technical Requirements
 

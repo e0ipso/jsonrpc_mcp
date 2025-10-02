@@ -1,0 +1,30 @@
+<?php
+
+/**
+ * @file
+ * Primary module hooks for jsonrpc_mcp module.
+ */
+
+use Drupal\Core\Cache\Cache;
+
+/**
+ * Implements hook_modules_installed().
+ *
+ * Invalidates MCP discovery cache when modules are installed, as new
+ * JSON-RPC methods with MCP tools may be introduced.
+ */
+function jsonrpc_mcp_modules_installed($modules) {
+  // Invalidate discovery cache to pick up any new MCP tools from installed modules.
+  Cache::invalidateTags(['jsonrpc_mcp:discovery']);
+}
+
+/**
+ * Implements hook_modules_uninstalled().
+ *
+ * Invalidates MCP discovery cache when modules are uninstalled, as
+ * JSON-RPC methods with MCP tools may be removed.
+ */
+function jsonrpc_mcp_modules_uninstalled($modules) {
+  // Invalidate discovery cache to remove any MCP tools from uninstalled modules.
+  Cache::invalidateTags(['jsonrpc_mcp:discovery']);
+}

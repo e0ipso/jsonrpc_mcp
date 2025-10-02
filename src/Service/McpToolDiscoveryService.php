@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\jsonrpc_mcp\Service;
 
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\jsonrpc\HandlerInterface;
 use Drupal\jsonrpc\MethodInterface;
@@ -86,6 +87,17 @@ class McpToolDiscoveryService {
     $reflection = new \ReflectionClass($class);
     $attributes = $reflection->getAttributes(McpTool::class);
     return !empty($attributes);
+  }
+
+  /**
+   * Invalidates the MCP tool discovery cache.
+   *
+   * This method clears all cached discovery responses by invalidating
+   * the custom cache tag. Call this when plugin definitions change or
+   * when manual cache clearing is needed.
+   */
+  public function invalidateDiscoveryCache(): void {
+    Cache::invalidateTags(['jsonrpc_mcp:discovery']);
   }
 
 }

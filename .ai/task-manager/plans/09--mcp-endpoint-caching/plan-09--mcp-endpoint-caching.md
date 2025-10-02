@@ -250,12 +250,12 @@ graph TD
 
 - ✔️ Task 02: Add Cache Metadata (depends on: 01)
 
-### Phase 3: Routing and Core Invalidation
+### Phase 3: Routing and Core Invalidation ✅
 
 **Parallel Tasks:**
 
-- Task 03: Remove Routing Restrictions (depends on: 02)
-- Task 05: Test Cache Metadata (depends on: 02)
+- ✔️ Task 03: Remove Routing Restrictions (depends on: 02)
+- ✔️ Task 05: Test Cache Metadata (depends on: 02)
 
 ### Phase 4: Cache Lifecycle Integration
 
