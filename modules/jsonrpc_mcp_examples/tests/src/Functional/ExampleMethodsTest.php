@@ -41,6 +41,7 @@ class ExampleMethodsTest extends BrowserTestBase {
     'jsonrpc_mcp',
     'jsonrpc_mcp_examples',
     'serialization',
+    'basic_auth',
   ];
 
   /**
