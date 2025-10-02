@@ -5,3 +5,12 @@ services:
 
   jsonrpc_mcp.tool_normalizer:
     class: Drupal\jsonrpc_mcp\Normalizer\McpToolNormalizer
+
+  jsonrpc_mcp.tools_controller:
+    class: Drupal\jsonrpc_mcp\Controller\McpToolsController
+    arguments:
+      [
+        '@jsonrpc_mcp.tool_discovery',
+        '@jsonrpc_mcp.tool_normalizer',
+        '@jsonrpc.handler',
+      ]

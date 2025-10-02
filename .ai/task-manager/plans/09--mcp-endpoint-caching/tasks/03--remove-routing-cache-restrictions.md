@@ -2,7 +2,7 @@
 id: 3
 group: 'routing-configuration'
 dependencies: [2]
-status: 'pending'
+status: 'completed'
 created: '2025-10-02'
 skills:
   - drupal-backend
@@ -20,11 +20,11 @@ Remove the `no_cache: 'TRUE'` option from discovery endpoint route definitions t
 
 ## Acceptance Criteria
 
-- [ ] `jsonrpc_mcp.tools_list` route no longer has `options: no_cache: 'TRUE'`
-- [ ] `jsonrpc_mcp.tools_describe` route no longer has `options: no_cache: 'TRUE'`
-- [ ] `jsonrpc_mcp.tools_invoke` route STILL has `options: no_cache: 'TRUE'` (unchanged)
-- [ ] Route configuration is valid YAML syntax
-- [ ] Routes are accessible after cache rebuild
+- [x] `jsonrpc_mcp.tools_list` route no longer has `options: no_cache: 'TRUE'`
+- [x] `jsonrpc_mcp.tools_describe` route no longer has `options: no_cache: 'TRUE'`
+- [x] `jsonrpc_mcp.tools_invoke` route STILL has `options: no_cache: 'TRUE'` (unchanged)
+- [x] Route configuration is valid YAML syntax
+- [x] Routes are accessible after cache rebuild
 
 ## Technical Requirements
 

@@ -2,8 +2,9 @@
 id: 5
 group: 'testing'
 dependencies: [2]
-status: 'pending'
+status: 'completed'
 created: '2025-10-02'
+completed: '2025-10-02'
 skills:
   - drupal-backend
   - phpunit
@@ -22,13 +23,13 @@ Create kernel tests that verify cache metadata (tags, contexts, max-age) is corr
 
 ## Acceptance Criteria
 
-- [ ] Kernel test class `McpToolsCacheMetadataTest.php` is created
-- [ ] Test verifies `list()` response has correct cache tags
-- [ ] Test verifies `list()` response has correct cache contexts
-- [ ] Test verifies `list()` response has permanent max-age
-- [ ] Test verifies `describe()` response has correct cache metadata
-- [ ] Test verifies `invoke()` response has max-age of 0
-- [ ] All tests pass and follow Drupal coding standards
+- [x] Kernel test class `McpToolsCacheMetadataTest.php` is created
+- [x] Test verifies `list()` response has correct cache tags
+- [x] Test verifies `list()` response has correct cache contexts
+- [x] Test verifies `list()` response has permanent max-age
+- [x] Test verifies `describe()` response has correct cache metadata
+- [x] Test verifies `invoke()` response has max-age of 0
+- [x] All tests pass and follow Drupal coding standards
 
 ## Technical Requirements
 
