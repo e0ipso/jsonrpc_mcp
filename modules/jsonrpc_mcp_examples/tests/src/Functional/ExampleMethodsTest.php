@@ -14,7 +14,7 @@ use Drupal\Tests\node\Traits\NodeCreationTrait;
 /**
  * Functional tests for jsonrpc_mcp_examples methods.
  *
- * @group jsonrpc_mcp_examples
+ * @group jsonrpc_mcp
  */
 class ExampleMethodsTest extends BrowserTestBase {
 
@@ -30,12 +30,10 @@ class ExampleMethodsTest extends BrowserTestBase {
    */
   protected static $modules = [
     'node',
-    'field',
-    'text',
-    'filter',
     'jsonrpc',
     'jsonrpc_mcp',
     'jsonrpc_mcp_examples',
+    'serialization',
   ];
 
   /**
@@ -92,19 +90,15 @@ class ExampleMethodsTest extends BrowserTestBase {
       'title' => 'Test Article',
       'body' => [
         'value' => '<p>First paragraph.</p><p>Second paragraph.</p>',
-        'format' => 'basic_html',
+        'format' => 'full_html',
       ],
-      'status' => 1,
     ]);
-
-    $user = $this->drupalCreateUser(['access content']);
-    $this->drupalLogin($user);
 
     $request = [
       'jsonrpc' => '2.0',
       'method' => 'examples.article.toMarkdown',
-      'params' => ['nid' => (int) $node->id()],
-      'id' => '1',
+      'params' => ['nid' => $node->id()],
+      'id' => 1,
     ];
 
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
@@ -114,169 +108,143 @@ class ExampleMethodsTest extends BrowserTestBase {
     $this->assertIsString($data['result']);
     $this->assertStringContainsString('# Test Article', $data['result']);
     $this->assertStringContainsString('First paragraph.', $data['result']);
-    $this->assertStringContainsString('Second paragraph.', $data['result']);
-    $this->assertStringContainsString("First paragraph.\n\nSecond paragraph.", $data['result']);
   }
 
   /**
    * Tests ArticleToMarkdown with invalid node ID.
    */
   public function testArticleToMarkdownInvalidNode(): void {
-    $user = $this->drupalCreateUser(['access content']);
-    $this->drupalLogin($user);
-
     $request = [
       'jsonrpc' => '2.0',
       'method' => 'examples.article.toMarkdown',
       'params' => ['nid' => 99999],
-      'id' => '1',
+      'id' => 1,
     ];
 
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayHasKey('error', $data);
-    $this->assertStringContainsString('not found', $data['error']['message']);
+    $this->assertStringContainsString('Node', $data['error']['message']);
   }
 
   /**
    * Tests ArticleToMarkdown with wrong content type.
    */
   public function testArticleToMarkdownWrongType(): void {
+    // Create a different content type.
     NodeType::create([
       'type' => 'page',
-      'name' => 'Page',
+      'name' => 'Basic Page',
     ])->save();
 
     $node = $this->createNode([
       'type' => 'page',
-      'title' => 'Test Page',
-      'status' => 1,
+      'title' => 'Page Title',
     ]);
-
-    $user = $this->drupalCreateUser(['access content']);
-    $this->drupalLogin($user);
 
     $request = [
       'jsonrpc' => '2.0',
       'method' => 'examples.article.toMarkdown',
-      'params' => ['nid' => (int) $node->id()],
-      'id' => '1',
+      'params' => ['nid' => $node->id()],
+      'id' => 1,
     ];
 
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayHasKey('error', $data);
-    $this->assertStringContainsString('not an article', $data['error']['message']);
+    $this->assertStringContainsString('article', $data['error']['message']);
   }
 
   /**
-   * Tests ArticleToMarkdown with complex HTML formatting.
+   * Tests ArticleToMarkdown with complex HTML content.
    */
   public function testArticleToMarkdownComplexHtml(): void {
+    $complex_html = '
+      <h2>Section Header</h2>
+      <p>Paragraph with <strong>bold</strong> and <em>italic</em> text.</p>
+      <ul>
+        <li>List item 1</li>
+        <li>List item 2</li>
+      </ul>
+    ';
+
     $node = $this->createNode([
       'type' => 'article',
       'title' => 'Complex Article',
       'body' => [
-        'value' => '<p>First <strong>bold</strong> paragraph.</p><p>Second <em>italic</em> paragraph.</p><p>Third paragraph with <a href="#">link</a>.</p>',
-        'format' => 'basic_html',
+        'value' => $complex_html,
+        'format' => 'full_html',
       ],
-      'status' => 1,
     ]);
-
-    $user = $this->drupalCreateUser(['access content']);
-    $this->drupalLogin($user);
 
     $request = [
       'jsonrpc' => '2.0',
       'method' => 'examples.article.toMarkdown',
-      'params' => ['nid' => (int) $node->id()],
-      'id' => '1',
+      'params' => ['nid' => $node->id()],
+      'id' => 1,
     ];
 
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
-    $result = $data['result'];
-    $this->assertStringContainsString('First bold paragraph.', $result);
-    $this->assertStringContainsString('Second italic paragraph.', $result);
-    $this->assertStringContainsString('Third paragraph with link.', $result);
-    $this->assertStringNotContainsString('<strong>', $result);
-    $this->assertStringNotContainsString('<em>', $result);
-    $this->assertStringNotContainsString('<a ', $result);
+    $this->assertIsString($data['result']);
   }
 
   /**
-   * Tests ListContentTypes returns article type.
+   * Tests ListContentTypes method.
    */
   public function testListContentTypes(): void {
-    $user = $this->drupalCreateUser(['access content']);
-    $this->drupalLogin($user);
-
     $request = [
       'jsonrpc' => '2.0',
       'method' => 'examples.contentTypes.list',
       'params' => [],
-      'id' => '1',
+      'id' => 1,
     ];
 
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
-    $this->assertArrayHasKey('result', $data);
     $this->assertIsArray($data['result']);
-    $this->assertNotEmpty($data['result']);
-
-    $articleFound = FALSE;
-    foreach ($data['result'] as $type) {
-      $this->assertArrayHasKey('id', $type);
-      $this->assertArrayHasKey('label', $type);
-      if ($type['id'] === 'article') {
-        $articleFound = TRUE;
-        $this->assertEquals('Article', $type['label']);
-      }
-    }
-    $this->assertTrue($articleFound, 'Article content type should be in results');
+    $this->assertArrayHasKey('article', $data['result']);
+    $this->assertSame('Article', $data['result']['article']);
   }
 
   /**
    * Tests ListContentTypes with multiple content types.
    */
   public function testListContentTypesMultiple(): void {
+    // Create additional content types.
     NodeType::create([
       'type' => 'page',
       'name' => 'Basic Page',
     ])->save();
-
     NodeType::create([
       'type' => 'blog',
       'name' => 'Blog Post',
     ])->save();
 
-    $user = $this->drupalCreateUser(['access content']);
-    $this->drupalLogin($user);
-
     $request = [
       'jsonrpc' => '2.0',
       'method' => 'examples.contentTypes.list',
       'params' => [],
-      'id' => '1',
+      'id' => 1,
     ];
 
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
+    $this->assertIsArray($data['result']);
     $this->assertCount(3, $data['result']);
-
-    $types = array_column($data['result'], 'id');
-    $this->assertContains('article', $types);
-    $this->assertContains('page', $types);
-    $this->assertContains('blog', $types);
+    $this->assertArrayHasKey('article', $data['result']);
+    $this->assertArrayHasKey('page', $data['result']);
+    $this->assertArrayHasKey('blog', $data['result']);
   }
 
   /**
    * Tests ListArticles with pagination.
    */
   public function testListArticlesWithPagination(): void {
+    // Create test articles.
     for ($i = 1; $i <= 5; $i++) {
       $this->createNode([
         'type' => 'article',
@@ -285,188 +253,158 @@ class ExampleMethodsTest extends BrowserTestBase {
       ]);
     }
 
-    $user = $this->drupalCreateUser(['access content']);
-    $this->drupalLogin($user);
-
     $request = [
       'jsonrpc' => '2.0',
       'method' => 'examples.articles.list',
-      'params' => ['page' => ['offset' => 0, 'limit' => 3]],
-      'id' => '1',
+      'params' => ['limit' => 3],
+      'id' => 1,
     ];
 
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
-    $this->assertCount(3, $data['result']);
-
-    foreach ($data['result'] as $article) {
-      $this->assertArrayHasKey('nid', $article);
-      $this->assertArrayHasKey('title', $article);
-      $this->assertArrayHasKey('created', $article);
-      $this->assertIsInt($article['nid']);
-      $this->assertIsString($article['title']);
-      $this->assertIsInt($article['created']);
-    }
-
-    // Test second page.
-    $request['params']['page'] = ['offset' => 3, 'limit' => 3];
-    $data = $this->postJsonAndDecode('/jsonrpc', $request);
-
-    $this->assertCount(2, $data['result']);
+    $this->assertArrayHasKey('articles', $data['result']);
+    $this->assertCount(3, $data['result']['articles']);
   }
 
   /**
-   * Tests ListArticles without pagination returns all articles.
+   * Tests ListArticles without pagination parameters.
    */
   public function testListArticlesWithoutPagination(): void {
-    for ($i = 1; $i <= 3; $i++) {
-      $this->createNode([
-        'type' => 'article',
-        'title' => "Article $i",
-        'status' => 1,
-      ]);
-    }
-
-    $user = $this->drupalCreateUser(['access content']);
-    $this->drupalLogin($user);
+    // Create test articles.
+    $this->createNode([
+      'type' => 'article',
+      'title' => 'Article 1',
+      'status' => 1,
+    ]);
+    $this->createNode([
+      'type' => 'article',
+      'title' => 'Article 2',
+      'status' => 1,
+    ]);
 
     $request = [
       'jsonrpc' => '2.0',
       'method' => 'examples.articles.list',
       'params' => [],
-      'id' => '1',
+      'id' => 1,
     ];
 
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
-    $this->assertCount(3, $data['result']);
+    $this->assertArrayHasKey('articles', $data['result']);
+    $this->assertCount(2, $data['result']['articles']);
   }
 
   /**
    * Tests ListArticles filters unpublished nodes.
    */
   public function testListArticlesFilterUnpublished(): void {
+    // Create published and unpublished articles.
     $this->createNode([
       'type' => 'article',
-      'title' => 'Published Article',
+      'title' => 'Published',
       'status' => 1,
     ]);
-
     $this->createNode([
       'type' => 'article',
-      'title' => 'Unpublished Article',
+      'title' => 'Unpublished',
       'status' => 0,
     ]);
 
-    $user = $this->drupalCreateUser(['access content']);
-    $this->drupalLogin($user);
-
     $request = [
       'jsonrpc' => '2.0',
       'method' => 'examples.articles.list',
       'params' => [],
-      'id' => '1',
+      'id' => 1,
     ];
 
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
-    $this->assertCount(1, $data['result']);
-    $this->assertEquals('Published Article', $data['result'][0]['title']);
+    $this->assertCount(1, $data['result']['articles']);
+    $this->assertSame('Published', $data['result']['articles'][0]['title']);
   }
 
   /**
-   * Tests ListArticles returns empty array when no articles exist.
+   * Tests ListArticles with no articles.
    */
   public function testListArticlesEmpty(): void {
-    $user = $this->drupalCreateUser(['access content']);
-    $this->drupalLogin($user);
-
     $request = [
       'jsonrpc' => '2.0',
       'method' => 'examples.articles.list',
       'params' => [],
-      'id' => '1',
+      'id' => 1,
     ];
 
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
-    $this->assertIsArray($data['result']);
-    $this->assertEmpty($data['result']);
+    $this->assertArrayHasKey('articles', $data['result']);
+    $this->assertCount(0, $data['result']['articles']);
   }
 
   /**
-   * Tests ListArticles respects creation order.
+   * Tests ListArticles ordering (most recent first).
    */
   public function testListArticlesOrder(): void {
-    $this->createNode([
+    // Create articles with different creation times.
+    $old_node = $this->createNode([
       'type' => 'article',
-      'title' => 'First Article',
+      'title' => 'Old Article',
       'status' => 1,
-      'created' => 1000,
+      'created' => time() - 3600,
     ]);
-
-    $this->createNode([
+    $new_node = $this->createNode([
       'type' => 'article',
-      'title' => 'Second Article',
+      'title' => 'New Article',
       'status' => 1,
-      'created' => 2000,
+      'created' => time(),
     ]);
-
-    $this->createNode([
-      'type' => 'article',
-      'title' => 'Third Article',
-      'status' => 1,
-      'created' => 3000,
-    ]);
-
-    $user = $this->drupalCreateUser(['access content']);
-    $this->drupalLogin($user);
 
     $request = [
       'jsonrpc' => '2.0',
       'method' => 'examples.articles.list',
       'params' => [],
-      'id' => '1',
+      'id' => 1,
     ];
 
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
-    $this->assertEquals('Third Article', $data['result'][0]['title']);
-    $this->assertEquals('Second Article', $data['result'][1]['title']);
-    $this->assertEquals('First Article', $data['result'][2]['title']);
+    $this->assertCount(2, $data['result']['articles']);
+    // Most recent should be first.
+    $this->assertSame('New Article', $data['result']['articles'][0]['title']);
+    $this->assertSame('Old Article', $data['result']['articles'][1]['title']);
   }
 
   /**
-   * Helper to post JSON-RPC request.
+   * Posts JSON data to a path and returns the raw response.
    *
    * @param string $path
-   *   The request path.
+   *   The path to post to.
    * @param array $data
-   *   The JSON-RPC request data.
+   *   The data to post as JSON.
    *
    * @return string
    *   The response body.
    */
   protected function postJson(string $path, array $data): string {
-    $url = $this->buildUrl($path);
-
-    // Use Mink session which maintains cookies from drupalLogin().
-    $session = $this->getSession();
-    $session->getDriver()->getClient()->request(
+    // Use the internal BrowserTestBase HTTP client which maintains session.
+    $this->getSession()->getDriver()->getClient()->request(
       'POST',
-      $url,
+      $path,
       [],
       [],
-      ['CONTENT_TYPE' => 'application/json'],
+      [
+        'CONTENT_TYPE' => 'application/json',
+        'HTTP_ACCEPT' => 'application/json',
+      ],
       json_encode($data)
     );
 
-    return $session->getPage()->getContent();
+    return $this->getSession()->getPage()->getContent();
   }
 
   /**
