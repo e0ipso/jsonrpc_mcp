@@ -50,7 +50,6 @@ class McpToolsController extends ControllerBase {
    * @phpstan-return static
    */
   public static function create(ContainerInterface $container) {
-    // @phpstan-ignore-next-line return.type
     return new self(
       $container->get('jsonrpc_mcp.tool_discovery'),
       $container->get('jsonrpc_mcp.tool_normalizer'),
