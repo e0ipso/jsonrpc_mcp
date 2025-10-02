@@ -288,14 +288,15 @@ Lists all available MCP tools with pagination support.
       "name": "string",
       "description": "string",
       "inputSchema": {},
-      "title": "string (optional)",
-      "outputSchema": {} | "optional)",
-      "annotations": {}  | "(optional)"
+      "title": "string",
+      "outputSchema": {}",
+      "annotations": {}"
     }
   ],
   "nextCursor": "string|null"
 }
 ```
+Fields `name`, `description`, and `inputSchema` are not optional and they will always be present.
 
 **Pagination:**
 
@@ -332,11 +333,12 @@ Returns detailed schema information for a specific tool.
     "description": "string",
     "inputSchema": {},
     "outputSchema": {},
-    "title": "string (optional)",
-    "annotations": {} (optional)"
+    "title": "string",
+    "annotations": {}"
   }
 }
 ```
+Fields `name`, `description`, `inputSchema`, and `outputSchema` are not optional and they will always be present.
 
 **Error Response (400/404):**
 
@@ -437,11 +439,3 @@ Invokes a tool with the provided arguments.
 - [MCP Tool Discovery](https://modelcontextprotocol.io/specification/2025-06-18/server/tools) - Tool discovery protocol
 - [JSON Schema Draft 7](https://json-schema.org/draft-07/schema) - Schema specification used by MCP
 - [Drupal JSON-RPC Module](https://www.drupal.org/project/jsonrpc) - Base JSON-RPC infrastructure
-
-## License
-
-GPL-2.0-or-later
-
-## Maintainers
-
-- Your Name - [your-drupal-username](https://www.drupal.org/u/your-drupal-username)
