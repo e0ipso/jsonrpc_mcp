@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\Tests\jsonrpc_mcp_examples\Functional;
 
 use Drupal\Component\Serialization\Json;
-use Drupal\Core\Url;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\node\Entity\NodeType;
@@ -20,6 +19,13 @@ use Drupal\Tests\node\Traits\NodeCreationTrait;
 class ExampleMethodsTest extends BrowserTestBase {
 
   use NodeCreationTrait;
+
+  /**
+   * Test user for Basic Auth.
+   *
+   * @var \Drupal\user\UserInterface
+   */
+  protected $testUser;
 
   /**
    * {@inheritdoc}
@@ -74,19 +80,19 @@ class ExampleMethodsTest extends BrowserTestBase {
       ->setComponent('body', ['label' => 'hidden', 'type' => 'text_default'])
       ->save();
 
-    // Enable cookie authentication for JSON-RPC.
+    // Enable basic auth for JSON-RPC.
     $this->container->get('config.factory')
       ->getEditable('jsonrpc.settings')
-      ->set('cookie', TRUE)
+      ->set('basic_auth', TRUE)
       ->save(TRUE);
     \Drupal::service('router.builder')->rebuild();
 
-    // Create and login a user with JSON-RPC and content access permissions.
-    $user = $this->drupalCreateUser([
+    // Create a user with JSON-RPC and content access permissions.
+    // Store it so we can use it for authentication in requests.
+    $this->testUser = $this->drupalCreateUser([
       'use jsonrpc services',
       'access content',
     ]);
-    $this->drupalLogin($user);
   }
 
   /**
@@ -399,27 +405,17 @@ class ExampleMethodsTest extends BrowserTestBase {
    *   The response body.
    */
   protected function postJson(string $path, array $data): string {
-    // Use BrowserTestBase's HTTP client with session cookies and CSRF token.
-    // drupalLogin() was already called in setUp(), so use those cookies.
+    // Use BrowserTestBase's HTTP client with Basic Auth.
     $client = $this->getHttpClient();
-
-    // Get CSRF token for cookie authentication.
-    $csrf_token_url = Url::fromRoute('system.csrftoken')
-      ->setAbsolute()->toString();
-    $csrf_response = $client->request('GET', $csrf_token_url, [
-      'cookies' => $this->getSessionCookies(),
-    ]);
-    $csrf_token = (string) $csrf_response->getBody();
 
     $response = $client->request('POST', $this->buildUrl($path), [
       'headers' => [
         'Content-Type' => 'application/json',
         'Accept' => 'application/json',
-        'X-CSRF-Token' => $csrf_token,
       ],
       'body' => json_encode($data),
       'http_errors' => FALSE,
-      'cookies' => $this->getSessionCookies(),
+      'auth' => [$this->testUser->getAccountName(), $this->testUser->passRaw],
     ]);
 
     return (string) $response->getBody();
