@@ -112,7 +112,7 @@ class ExampleMethodsTest extends BrowserTestBase {
     $request = [
       'jsonrpc' => '2.0',
       'method' => 'examples.article.toMarkdown',
-      'params' => ['nid' => $node->id()],
+      'params' => ['nid' => (int) $node->id()],
       'id' => 1,
     ];
 
@@ -139,7 +139,12 @@ class ExampleMethodsTest extends BrowserTestBase {
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayHasKey('error', $data);
-    $this->assertStringContainsString('Node', $data['error']['message']);
+    // Error could be in message or data field.
+    $errorText = $data['error']['message'] ?? '';
+    if (isset($data['error']['data'])) {
+      $errorText .= ' ' . $data['error']['data'];
+    }
+    $this->assertStringContainsString('not found', $errorText);
   }
 
   /**
@@ -160,14 +165,19 @@ class ExampleMethodsTest extends BrowserTestBase {
     $request = [
       'jsonrpc' => '2.0',
       'method' => 'examples.article.toMarkdown',
-      'params' => ['nid' => $node->id()],
+      'params' => ['nid' => (int) $node->id()],
       'id' => 1,
     ];
 
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayHasKey('error', $data);
-    $this->assertStringContainsString('article', $data['error']['message']);
+    // Error could be in message or data field.
+    $errorText = $data['error']['message'] ?? '';
+    if (isset($data['error']['data'])) {
+      $errorText .= ' ' . $data['error']['data'];
+    }
+    $this->assertStringContainsString('article', $errorText);
   }
 
   /**
@@ -195,7 +205,7 @@ class ExampleMethodsTest extends BrowserTestBase {
     $request = [
       'jsonrpc' => '2.0',
       'method' => 'examples.article.toMarkdown',
-      'params' => ['nid' => $node->id()],
+      'params' => ['nid' => (int) $node->id()],
       'id' => 1,
     ];
 
@@ -212,7 +222,6 @@ class ExampleMethodsTest extends BrowserTestBase {
     $request = [
       'jsonrpc' => '2.0',
       'method' => 'examples.contentTypes.list',
-      'params' => [],
       'id' => 1,
     ];
 
@@ -220,8 +229,16 @@ class ExampleMethodsTest extends BrowserTestBase {
 
     $this->assertArrayNotHasKey('error', $data);
     $this->assertIsArray($data['result']);
-    $this->assertArrayHasKey('article', $data['result']);
-    $this->assertSame('Article', $data['result']['article']);
+    // Find article content type in results.
+    $found = FALSE;
+    foreach ($data['result'] as $type) {
+      if ($type['id'] === 'article') {
+        $this->assertSame('Article', $type['label']);
+        $found = TRUE;
+        break;
+      }
+    }
+    $this->assertTrue($found, 'Article content type not found in results');
   }
 
   /**
@@ -241,7 +258,6 @@ class ExampleMethodsTest extends BrowserTestBase {
     $request = [
       'jsonrpc' => '2.0',
       'method' => 'examples.contentTypes.list',
-      'params' => [],
       'id' => 1,
     ];
 
@@ -250,9 +266,11 @@ class ExampleMethodsTest extends BrowserTestBase {
     $this->assertArrayNotHasKey('error', $data);
     $this->assertIsArray($data['result']);
     $this->assertCount(3, $data['result']);
-    $this->assertArrayHasKey('article', $data['result']);
-    $this->assertArrayHasKey('page', $data['result']);
-    $this->assertArrayHasKey('blog', $data['result']);
+    // Check that all three content types are present.
+    $types = array_column($data['result'], 'id');
+    $this->assertContains('article', $types);
+    $this->assertContains('page', $types);
+    $this->assertContains('blog', $types);
   }
 
   /**
@@ -271,15 +289,16 @@ class ExampleMethodsTest extends BrowserTestBase {
     $request = [
       'jsonrpc' => '2.0',
       'method' => 'examples.articles.list',
-      'params' => ['limit' => 3],
+      'params' => ['page' => ['offset' => 0, 'limit' => 3]],
       'id' => 1,
     ];
 
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
-    $this->assertArrayHasKey('articles', $data['result']);
-    $this->assertCount(3, $data['result']['articles']);
+    $this->assertArrayHasKey('result', $data);
+    $this->assertIsArray($data['result']);
+    $this->assertCount(3, $data['result']);
   }
 
   /**
@@ -308,8 +327,9 @@ class ExampleMethodsTest extends BrowserTestBase {
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
-    $this->assertArrayHasKey('articles', $data['result']);
-    $this->assertCount(2, $data['result']['articles']);
+    $this->assertArrayHasKey('result', $data);
+    $this->assertIsArray($data['result']);
+    $this->assertCount(2, $data['result']);
   }
 
   /**
@@ -338,8 +358,9 @@ class ExampleMethodsTest extends BrowserTestBase {
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
-    $this->assertCount(1, $data['result']['articles']);
-    $this->assertSame('Published', $data['result']['articles'][0]['title']);
+    $this->assertIsArray($data['result']);
+    $this->assertCount(1, $data['result']);
+    $this->assertSame('Published', $data['result'][0]['title']);
   }
 
   /**
@@ -356,8 +377,9 @@ class ExampleMethodsTest extends BrowserTestBase {
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
-    $this->assertArrayHasKey('articles', $data['result']);
-    $this->assertCount(0, $data['result']['articles']);
+    $this->assertArrayHasKey('result', $data);
+    $this->assertIsArray($data['result']);
+    $this->assertCount(0, $data['result']);
   }
 
   /**
@@ -388,10 +410,11 @@ class ExampleMethodsTest extends BrowserTestBase {
     $data = $this->postJsonAndDecode('/jsonrpc', $request);
 
     $this->assertArrayNotHasKey('error', $data);
-    $this->assertCount(2, $data['result']['articles']);
+    $this->assertIsArray($data['result']);
+    $this->assertCount(2, $data['result']);
     // Most recent should be first.
-    $this->assertSame('New Article', $data['result']['articles'][0]['title']);
-    $this->assertSame('Old Article', $data['result']['articles'][1]['title']);
+    $this->assertSame('New Article', $data['result'][0]['title']);
+    $this->assertSame('Old Article', $data['result'][1]['title']);
   }
 
   /**
