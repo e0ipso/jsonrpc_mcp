@@ -423,7 +423,18 @@ class ExampleMethodsTest extends BrowserTestBase {
       'auth' => [$this->testUser->getAccountName(), $user->passRaw],
     ]);
 
-    return (string) $response->getBody();
+    $body = (string) $response->getBody();
+
+    // Debug empty responses.
+    if (empty($body)) {
+      $this->fail(sprintf(
+        'Empty response. Status: %d, Headers: %s',
+        $response->getStatusCode(),
+        json_encode($response->getHeaders())
+      ));
+    }
+
+    return $body;
   }
 
   /**
@@ -439,6 +450,12 @@ class ExampleMethodsTest extends BrowserTestBase {
    */
   protected function postJsonAndDecode(string $path, array $data): array {
     $response = $this->postJson($path, $data);
+
+    // Check if response is empty.
+    if (empty($response)) {
+      $this->fail('Empty response from JSON-RPC endpoint');
+    }
+
     $decoded = Json::decode($response);
 
     // Provide helpful debugging if JSON decode fails.
