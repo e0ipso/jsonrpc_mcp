@@ -415,3 +415,88 @@ graph TD
 - Maximum Parallelism: 3 tasks (in Phase 3 and Phase 5)
 - Critical Path Length: 6 phases
 - Estimated Complexity: All tasks ≤5 (no high-complexity tasks)
+
+---
+
+## Execution Summary
+
+**Status**: ✅ Completed Successfully  
+**Completed Date**: 2025-10-02  
+**Execution Duration**: Single execution session (all 6 phases)  
+**Feature Branch**: `plan-05-mcp-describe-invoke-endpoints`
+
+### Results
+
+Successfully implemented complete MCP A2A framework compliance with all three required endpoints:
+
+**Deliverables**:
+
+1. New permission system: `access mcp tool discovery`
+2. Three fully functional MCP endpoints:
+   - `/mcp/tools/list` (updated with permission requirement)
+   - `/mcp/tools/describe` (new)
+   - `/mcp/tools/invoke` (new)
+3. Comprehensive test coverage: 10 new test methods across 3 test tasks
+4. All quality gates passed: PHPStan, PHPCS, PHPUnit (36 tests, 213 assertions)
+
+**Technical Implementation**:
+
+- Updated `McpToolsController` with `describe()` and `invoke()` methods
+- Injected `HandlerInterface` dependency for JSON-RPC execution
+- Proper MCP-to-JSON-RPC request/response translation
+- Robust error handling with structured error responses (400, 403, 404, 500)
+- Permission-based access control separation (discovery vs execution)
+
+**Test Coverage**:
+
+- List endpoint: 1 comprehensive test + 1 permission denial test
+- Describe endpoint: 4 tests (success, permission denial, not found, missing parameter)
+- Invoke endpoint: 4 tests (success, not found, malformed request, invalid JSON)
+
+### Noteworthy Events
+
+**Challenges Overcome**:
+
+1. **JSON-RPC API Integration**: Required studying the JSON-RPC module's `HandlerInterface` to understand the correct usage of `batch()` method and `RpcRequest`/`RpcResponse` objects. Fixed initial implementation error using `isError()` instead of `isErrorResponse()`.
+
+2. **Test Implementation**: Functional tests for POST endpoints required understanding Guzzle HTTP client's PSR-7 response handling. Resolved stream reading issues by using `(string) $response->getBody()` instead of `getContents()`.
+
+3. **JSON Validation**: Added explicit null check for JSON decode results because `Json::decode()` returns null for invalid JSON but doesn't throw exceptions in all cases.
+
+4. **PHPStan Cleanup**: Removed unnecessary `@phpstan-ignore-next-line` comment that was no longer needed after proper type inference.
+
+**No Blocking Issues**: All tests passed on first attempt after bug fixes. No regressions introduced.
+
+### Recommendations
+
+**Immediate**:
+
+1. Document the permission system for site administrators - add note to README or module help text explaining that upgrading sites must grant "access mcp tool discovery" permission to appropriate roles.
+
+2. Consider adding an update hook to automatically grant the permission to roles that previously had access to the site (e.g., authenticated users) to minimize disruption during upgrades.
+
+**Future Enhancements**:
+
+1. Add response compression for large tool schemas (if needed in production)
+2. Consider rate limiting for invoke endpoint to prevent abuse
+3. Add optional request/response logging for debugging MCP clients
+4. Explore adding MCP server metadata endpoint (`/.well-known/mcp.json`) as mentioned in the original plan
+
+**Testing**:
+
+1. All JavaScript test files have pre-existing PHPCS violations (TRUE/FALSE casing) - consider running `phpcbf` to auto-fix these minor issues.
+2. Other modules in the codebase have failing tests unrelated to this implementation - not blocking but worth noting for overall project health.
+
+### Metrics
+
+- **Lines of Code Added**: ~350 (controller methods, tests)
+- **Files Modified**: 5 (Controller, routing, permissions, test file, task files)
+- **Commits**: 6 (one per phase)
+- **Test Suite Growth**: 10 new functional test methods
+- **Code Quality**: 100% PHPStan/PHPCS compliance for modified files
+- **Test Pass Rate**: 100% (all 36 jsonrpc_mcp tests passing)
+
+---
+
+**Archive Date**: 2025-10-02  
+**Archived To**: `.ai/task-manager/archive/05--mcp-describe-endpoint/`

@@ -26,6 +26,7 @@ jsonrpc_mcp.tools_invoke:
     _controller: '\Drupal\jsonrpc_mcp\Controller\McpToolsController::invoke'
     _title: 'MCP Tool Invocation'
   requirements:
+    # Access is deferred to the JSON-RPC manager.
     _access: 'TRUE'
     _method: 'POST'
   options:

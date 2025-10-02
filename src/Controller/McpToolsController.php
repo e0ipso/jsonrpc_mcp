@@ -45,9 +45,7 @@ class McpToolsController extends ControllerBase {
   /**
    * {@inheritdoc}
    *
-   * @return static
-   *
-   * @phpstan-return static
+   * @return \Drupal\jsonrpc_mcp\Controller\McpToolsController
    */
   public static function create(ContainerInterface $container) {
     return new self(
