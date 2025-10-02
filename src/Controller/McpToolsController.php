@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\jsonrpc_mcp\Controller;
 
 use Drupal\Component\Serialization\Json;
+use Drupal\Core\Cache\CacheableJsonResponse;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\jsonrpc\Exception\JsonRpcException;
 use Drupal\jsonrpc\HandlerInterface;
@@ -12,7 +13,6 @@ use Drupal\jsonrpc\JsonRpcObject\ParameterBag;
 use Drupal\jsonrpc\JsonRpcObject\Request as RpcRequest;
 use Drupal\jsonrpc_mcp\Normalizer\McpToolNormalizer;
 use Drupal\jsonrpc_mcp\Service\McpToolDiscoveryService;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -66,10 +66,10 @@ class McpToolsController extends ControllerBase {
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   The HTTP request object.
    *
-   * @return \Symfony\Component\HttpFoundation\JsonResponse
+   * @return \Drupal\Core\Cache\CacheableJsonResponse
    *   JSON response with 'tools' array and 'nextCursor' field.
    */
-  public function list(Request $request): JsonResponse {
+  public function list(Request $request): CacheableJsonResponse {
     $cursor = $request->query->get('cursor');
     $tools = $this->toolDiscovery->discoverTools();
 
@@ -90,7 +90,7 @@ class McpToolsController extends ControllerBase {
       $next_cursor = base64_encode((string) ($offset + $page_size));
     }
 
-    return new JsonResponse([
+    return new CacheableJsonResponse([
       'tools' => $normalized_tools,
       'nextCursor' => $next_cursor,
     ]);
@@ -105,14 +105,14 @@ class McpToolsController extends ControllerBase {
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   The HTTP request object.
    *
-   * @return \Symfony\Component\HttpFoundation\JsonResponse
+   * @return \Drupal\Core\Cache\CacheableJsonResponse
    *   JSON response with 'tool' object or 'error' object.
    */
-  public function describe(Request $request): JsonResponse {
+  public function describe(Request $request): CacheableJsonResponse {
     $name = $request->query->get('name');
 
     if (!$name) {
-      return new JsonResponse([
+      return new CacheableJsonResponse([
         'error' => [
           'code' => 'missing_parameter',
           'message' => 'Required parameter "name" is missing',
@@ -123,7 +123,7 @@ class McpToolsController extends ControllerBase {
     $tools = $this->toolDiscovery->discoverTools();
 
     if (!isset($tools[$name])) {
-      return new JsonResponse([
+      return new CacheableJsonResponse([
         'error' => [
           'code' => 'tool_not_found',
           'message' => sprintf("Tool '%s' not found or access denied", $name),
@@ -133,7 +133,7 @@ class McpToolsController extends ControllerBase {
 
     $normalized_tool = $this->normalizer->normalize($tools[$name]);
 
-    return new JsonResponse([
+    return new CacheableJsonResponse([
       'tool' => $normalized_tool,
     ]);
   }
@@ -148,17 +148,17 @@ class McpToolsController extends ControllerBase {
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   The HTTP request object.
    *
-   * @return \Symfony\Component\HttpFoundation\JsonResponse
+   * @return \Drupal\Core\Cache\CacheableJsonResponse
    *   JSON response with 'result' object or 'error' object.
    */
-  public function invoke(Request $request): JsonResponse {
+  public function invoke(Request $request): CacheableJsonResponse {
     // Parse JSON request body.
     $content = $request->getContent();
     try {
       $data = Json::decode($content);
     }
     catch (\Exception $e) {
-      return new JsonResponse([
+      return new CacheableJsonResponse([
         'error' => [
           'code' => 'invalid_json',
           'message' => 'Request body must be valid JSON',
@@ -168,7 +168,7 @@ class McpToolsController extends ControllerBase {
 
     // Validate JSON decode success.
     if ($data === NULL || !is_array($data)) {
-      return new JsonResponse([
+      return new CacheableJsonResponse([
         'error' => [
           'code' => 'invalid_json',
           'message' => 'Request body must be valid JSON',
@@ -178,7 +178,7 @@ class McpToolsController extends ControllerBase {
 
     // Validate required parameters.
     if (!isset($data['name']) || !is_string($data['name'])) {
-      return new JsonResponse([
+      return new CacheableJsonResponse([
         'error' => [
           'code' => 'missing_parameter',
           'message' => 'Required parameter "name" is missing or invalid',
@@ -187,7 +187,7 @@ class McpToolsController extends ControllerBase {
     }
 
     if (!isset($data['arguments']) || !is_array($data['arguments'])) {
-      return new JsonResponse([
+      return new CacheableJsonResponse([
         'error' => [
           'code' => 'missing_parameter',
           'message' => 'Required parameter "arguments" is missing or invalid',
@@ -202,7 +202,7 @@ class McpToolsController extends ControllerBase {
     $tools = $this->toolDiscovery->discoverTools();
 
     if (!isset($tools[$name])) {
-      return new JsonResponse([
+      return new CacheableJsonResponse([
         'error' => [
           'code' => 'tool_not_found',
           'message' => sprintf("Tool '%s' not found or access denied", $name),
@@ -219,7 +219,7 @@ class McpToolsController extends ControllerBase {
 
       // Extract result from JSON-RPC response.
       if (empty($rpc_responses)) {
-        return new JsonResponse([
+        return new CacheableJsonResponse([
           'error' => [
             'code' => 'execution_error',
             'message' => 'Tool execution returned no response',
@@ -231,7 +231,7 @@ class McpToolsController extends ControllerBase {
 
       if ($rpc_response->isErrorResponse()) {
         $error = $rpc_response->getError();
-        return new JsonResponse([
+        return new CacheableJsonResponse([
           'error' => [
             'code' => 'execution_error',
             'message' => $error->getMessage(),
@@ -239,12 +239,12 @@ class McpToolsController extends ControllerBase {
         ], 500);
       }
 
-      return new JsonResponse([
+      return new CacheableJsonResponse([
         'result' => $rpc_response->getResult(),
       ]);
     }
     catch (JsonRpcException $e) {
-      return new JsonResponse([
+      return new CacheableJsonResponse([
         'error' => [
           'code' => 'execution_error',
           'message' => sprintf('Tool execution failed: %s', $e->getMessage()),
@@ -252,7 +252,7 @@ class McpToolsController extends ControllerBase {
       ], 500);
     }
     catch (\Exception $e) {
-      return new JsonResponse([
+      return new CacheableJsonResponse([
         'error' => [
           'code' => 'execution_error',
           'message' => sprintf('Tool execution failed: %s', $e->getMessage()),
