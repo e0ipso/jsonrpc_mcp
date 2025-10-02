@@ -56,8 +56,8 @@ class McpToolsCacheMetadataTest extends KernelTestBase {
     $admin = $this->createUser([], NULL, TRUE);
     $this->setCurrentUser($admin);
 
-    // Get the controller from container.
-    $this->controller = $this->container->get('jsonrpc_mcp.tools_controller');
+    // Instantiate controller using its create() method.
+    $this->controller = McpToolsController::create($this->container);
   }
 
   /**
