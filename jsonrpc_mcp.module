@@ -14,7 +14,8 @@ use Drupal\Core\Cache\Cache;
  * JSON-RPC methods with MCP tools may be introduced.
  */
 function jsonrpc_mcp_modules_installed($modules) {
-  // Invalidate discovery cache to pick up any new MCP tools from installed modules.
+  // Invalidate discovery cache to pick up any new MCP tools from installed
+  // modules.
   Cache::invalidateTags(['jsonrpc_mcp:discovery']);
 }
 
@@ -25,6 +26,7 @@ function jsonrpc_mcp_modules_installed($modules) {
  * JSON-RPC methods with MCP tools may be removed.
  */
 function jsonrpc_mcp_modules_uninstalled($modules) {
-  // Invalidate discovery cache to remove any MCP tools from uninstalled modules.
+  // Invalidate discovery cache to remove any MCP tools from uninstalled
+  // modules.
   Cache::invalidateTags(['jsonrpc_mcp:discovery']);
 }
