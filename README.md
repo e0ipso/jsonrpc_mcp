@@ -9,7 +9,6 @@ The [Model Context Protocol (MCP) specification (2025-06-18)](https://modelconte
 ### Key Features
 
 - 🔌 **Automatic Tool Discovery**: Expose existing JSON-RPC methods as MCP tools using a simple PHP attribute
-- 📋 **MCP-Compliant Endpoints**: Provides `/mcp/tools/list` endpoint following MCP specification (2025-06-18)
 - 🔐 **Security Built-in**: Inherits access control from JSON-RPC method permissions
 - 📊 **JSON Schema Validation**: Automatic conversion of JSON-RPC schemas to MCP inputSchema/outputSchema
 
@@ -17,14 +16,23 @@ The [Model Context Protocol (MCP) specification (2025-06-18)](https://modelconte
 
 - Drupal 10.2+ or 11.x
 - PHP 8.1+
-- [JSON-RPC](https://www.drupal.org/project/jsonrpc) module (version 3.0.0-beta1 or higher)
+- [JSON-RPC](https://www.drupal.org/project/jsonrpc) module (version 3 or higher)
 
 ## How It Works
 
 ### Architecture
 
-```
-Drupal JSON-RPC Method → #[McpTool] Attribute → MCP Tool Metadata → MCP Client (Claude, etc.)
+```mermaid
+  graph TB
+      A["JSON-RPC Plugin Definition"] --> B["#JsonRpcMethod + #McpTool attributes"]
+      B --> C["Discovery Service<br/>reads attributes"]
+      C --> D["MCP Tool Normalizer<br/>converts to MCP schema"]
+      D --> E["/mcp/tools/list endpoint<br/>returns MCP-compliant JSON"]
+      E --> F["MCP Client<br/>Claude Desktop, etc."]
+
+      style A fill:#e1f5ff
+      style F fill:#ffe1f5
+      style E fill:#e8f5e1
 ```
 
 The module uses PHP 8 attributes to mark JSON-RPC methods for MCP exposure. When an MCP client queries the discovery endpoint, the module:
@@ -288,8 +296,8 @@ Lists all available MCP tools with pagination support.
       "description": "string",
       "inputSchema": {},
       "title": "string",
-      "outputSchema": {}",
-      "annotations": {}"
+      "outputSchema": {},
+      "annotations": {}
     }
   ],
   "nextCursor": "string|null"
@@ -334,7 +342,7 @@ Returns detailed schema information for a specific tool.
     "inputSchema": {},
     "outputSchema": {},
     "title": "string",
-    "annotations": {}"
+    "annotations": {}
   }
 }
 ```
