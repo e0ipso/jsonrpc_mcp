@@ -47,7 +47,9 @@ class McpToolDiscoveryServiceTest extends KernelTestBase {
 
     // Install required entity schemas and configs.
     $this->installEntitySchema('user');
-    $this->installConfig(['system', 'user']);
+    $this->installEntitySchema('node');
+    $this->installSchema('node', ['node_access']);
+    $this->installConfig(['system', 'user', 'node', 'field']);
 
     // Get the discovery service.
     $this->discoveryService = $this->container->get('jsonrpc_mcp.tool_discovery');

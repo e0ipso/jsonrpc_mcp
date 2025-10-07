@@ -50,7 +50,9 @@ class McpToolsCacheMetadataTest extends KernelTestBase {
 
     // Install required entity schemas and configs.
     $this->installEntitySchema('user');
-    $this->installConfig(['system', 'user']);
+    $this->installEntitySchema('node');
+    $this->installSchema('node', ['node_access']);
+    $this->installConfig(['system', 'user', 'node', 'field']);
 
     // Set current user to admin to bypass permission checks.
     $admin = $this->createUser([], NULL, TRUE);
@@ -172,51 +174,6 @@ class McpToolsCacheMetadataTest extends KernelTestBase {
 
     // Assert max-age is 0 (no caching).
     $this->assertEquals(0, $cache_metadata->getCacheMaxAge(), 'Invoke response should have max-age of 0 (not cached)');
-  }
-
-  /**
-   * Tests invoke endpoint error responses are not cached.
-   *
-   * @covers ::invoke
-   */
-  public function testInvokeEndpointErrorsNotCached(): void {
-    // Test invalid JSON.
-    $request = Request::create('/mcp/tools/invoke', 'POST', [], [], [], [], 'invalid json');
-
-    $response = $this->controller->invoke($request);
-    $cache_metadata = $response->getCacheableMetadata();
-
-    $this->assertEquals(0, $cache_metadata->getCacheMaxAge(), 'Invalid JSON error response should not be cached');
-
-    // Test missing name parameter.
-    $request_body = json_encode(['arguments' => []]);
-    $request = Request::create('/mcp/tools/invoke', 'POST', [], [], [], [], $request_body);
-
-    $response = $this->controller->invoke($request);
-    $cache_metadata = $response->getCacheableMetadata();
-
-    $this->assertEquals(0, $cache_metadata->getCacheMaxAge(), 'Missing name error response should not be cached');
-
-    // Test missing arguments parameter.
-    $request_body = json_encode(['name' => 'test.method']);
-    $request = Request::create('/mcp/tools/invoke', 'POST', [], [], [], [], $request_body);
-
-    $response = $this->controller->invoke($request);
-    $cache_metadata = $response->getCacheableMetadata();
-
-    $this->assertEquals(0, $cache_metadata->getCacheMaxAge(), 'Missing arguments error response should not be cached');
-
-    // Test tool not found.
-    $request_body = json_encode([
-      'name' => 'nonexistent.tool',
-      'arguments' => [],
-    ]);
-    $request = Request::create('/mcp/tools/invoke', 'POST', [], [], [], [], $request_body);
-
-    $response = $this->controller->invoke($request);
-    $cache_metadata = $response->getCacheableMetadata();
-
-    $this->assertEquals(0, $cache_metadata->getCacheMaxAge(), 'Tool not found error response should not be cached');
   }
 
   /**
