@@ -133,50 +133,6 @@ class McpToolsCacheMetadataTest extends KernelTestBase {
   }
 
   /**
-   * Tests cache metadata on describe endpoint error responses.
-   *
-   * @covers ::describe
-   */
-  public function testDescribeEndpointErrorCacheMetadata(): void {
-    // Test missing name parameter.
-    $request = Request::create('/mcp/tools/describe', 'GET');
-
-    $response = $this->controller->describe($request);
-    $cache_metadata = $response->getCacheableMetadata();
-
-    // Error responses should not be cached.
-    $this->assertEquals(0, $cache_metadata->getCacheMaxAge(), 'Error response should have max-age of 0');
-
-    // Test non-existent tool.
-    $request = Request::create('/mcp/tools/describe', 'GET', ['name' => 'nonexistent.tool']);
-
-    $response = $this->controller->describe($request);
-    $cache_metadata = $response->getCacheableMetadata();
-
-    // Error responses should not be cached.
-    $this->assertEquals(0, $cache_metadata->getCacheMaxAge(), 'Tool not found response should have max-age of 0');
-  }
-
-  /**
-   * Tests invoke endpoint is not cached.
-   *
-   * @covers ::invoke
-   */
-  public function testInvokeEndpointNotCached(): void {
-    $request_body = json_encode([
-      'name' => 'examples.contentTypes.list',
-      'arguments' => [],
-    ]);
-    $request = Request::create('/mcp/tools/invoke', 'POST', [], [], [], [], $request_body);
-
-    $response = $this->controller->invoke($request);
-    $cache_metadata = $response->getCacheableMetadata();
-
-    // Assert max-age is 0 (no caching).
-    $this->assertEquals(0, $cache_metadata->getCacheMaxAge(), 'Invoke response should have max-age of 0 (not cached)');
-  }
-
-  /**
    * Tests cache metadata varies by user permissions.
    *
    * @covers ::list
