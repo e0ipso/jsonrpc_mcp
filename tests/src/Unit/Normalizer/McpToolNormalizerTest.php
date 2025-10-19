@@ -8,6 +8,7 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\jsonrpc\Attribute\JsonRpcParameterDefinition;
 use Drupal\jsonrpc\MethodInterface;
 use Drupal\jsonrpc_mcp\Normalizer\McpToolNormalizer;
+use Drupal\Tests\jsonrpc_mcp\Unit\Normalizer\Fixtures;
 use Drupal\Tests\jsonrpc_mcp\Unit\Normalizer\Fixtures\TestMethodWithMcpTool;
 use Drupal\Tests\jsonrpc_mcp\Unit\Normalizer\Fixtures\TestMethodWithOutputSchema;
 use PHPUnit\Framework\TestCase;
@@ -239,6 +240,35 @@ class McpToolNormalizerTest extends TestCase {
     $this->assertArrayHasKey('required_field', $result['inputSchema']['properties']);
     $this->assertArrayHasKey('optional_field', $result['inputSchema']['properties']);
     $this->assertSame(['required_field'], $result['inputSchema']['required']);
+  }
+
+  /**
+   * Tests normalization with auth metadata in annotations.
+   *
+   * Validates that auth metadata from the McpTool attribute is correctly
+   * included in the tool annotations, enabling MCP clients to determine
+   * required OAuth scopes.
+   *
+   * @covers ::normalize
+   * @covers ::extractMcpToolData
+   */
+  public function testNormalizeWithAuthMetadata(): void {
+    $method = $this->createMock(MethodInterface::class);
+    $method->method('id')
+      ->willReturn('test.method');
+    $method->method('getUsage')
+      ->willReturn($this->createMockTranslatableMarkup('Test description'));
+    $method->method('getParams')
+      ->willReturn([]);
+    $method->method('getClass')
+      ->willReturn(Fixtures\TestMethodWithAuthMetadata::class);
+
+    $result = $this->normalizer->normalize($method);
+
+    $this->assertArrayHasKey('annotations', $result);
+    $this->assertArrayHasKey('auth', $result['annotations']);
+    $this->assertSame(['content:read', 'user:write'], $result['annotations']['auth']['scopes']);
+    $this->assertSame('Requires content read and user write access', $result['annotations']['auth']['description']);
   }
 
   /**

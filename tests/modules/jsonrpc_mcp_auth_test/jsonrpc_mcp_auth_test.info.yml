@@ -1,0 +1,8 @@
+name: 'JSON-RPC MCP Auth Test'
+type: module
+description: 'Test module for OAuth authentication system testing'
+package: Testing
+core_version_requirement: ^10 || ^11
+dependencies:
+  - jsonrpc:jsonrpc
+  - jsonrpc_mcp:jsonrpc_mcp
