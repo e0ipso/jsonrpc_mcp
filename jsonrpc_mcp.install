@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the jsonrpc_mcp module.
+ */
+
+use Drupal\jsonrpc_mcp\OAuth\ScopeDefinitions;
+
+/**
+ * Implements hook_install().
+ */
+function jsonrpc_mcp_install() {
+  // Create OAuth scopes.
+  $entity_type_manager = \Drupal::entityTypeManager();
+  $scope_storage = $entity_type_manager->getStorage('consumer_scope');
+
+  foreach (ScopeDefinitions::getScopes() as $scope_id => $scope_info) {
+    // Check if scope already exists.
+    $existing = $scope_storage->loadByProperties(['name' => $scope_id]);
+    if (empty($existing)) {
+      $scope_storage->create([
+        'name' => $scope_id,
+        'description' => $scope_info['description'],
+        'label' => $scope_info['label'],
+      ])->save();
+    }
+  }
+}
