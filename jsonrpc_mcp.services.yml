@@ -5,3 +5,11 @@ services:
 
   jsonrpc_mcp.tool_normalizer:
     class: Drupal\jsonrpc_mcp\Normalizer\McpToolNormalizer
+
+  jsonrpc_mcp.middleware.oauth_scope_validator:
+    class: Drupal\jsonrpc_mcp\Middleware\OAuthScopeValidator
+    arguments:
+      - '@http_kernel'
+      - '@jsonrpc_mcp.tool_discovery'
+    tags:
+      - { name: http_middleware, priority: 200, responder: true }
