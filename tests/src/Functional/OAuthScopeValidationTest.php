@@ -7,26 +7,7 @@ namespace Drupal\Tests\jsonrpc_mcp\Functional;
 use Drupal\Tests\BrowserTestBase;
 
 /**
- * Functional tests for OAuth scope validation middleware.
- *
- * This test documents the expected behavior of the OAuth scope validation
- * system. Full end-to-end testing requires Simple OAuth module and token
- * infrastructure, which is not available in the standard test environment.
- *
- * The tests validate:
- * - Tools with auth metadata include it in discovery responses
- * - Tools without auth metadata work normally
- * - The system integrates correctly with the discovery service
- *
- * For complete OAuth integration testing in a production environment:
- * 1. Install Simple OAuth module
- * 2. Configure OAuth clients and scopes
- * 3. Generate access tokens with specific scopes
- * 4. Test that:
- *    - Requests with valid scopes succeed
- *    - Requests with missing scopes return 403 with error details
- *    - Requests without tokens for required tools return 403
- *    - Tools with level 'none' work without authentication
+ * Functional tests for OAuth scope validation and authentication metadata.
  *
  * @group jsonrpc_mcp
  */
@@ -50,14 +31,67 @@ class OAuthScopeValidationTest extends BrowserTestBase {
   ];
 
   /**
-   * Tests that tools with auth metadata include it in discovery response.
+   * Tests OAuth scope authentication system integration.
+   *
+   * Validates:
+   * - Tools with auth metadata include it in discovery responses
+   * - Tools without auth metadata don't have auth annotations
+   * - Inferred auth level (scopes without explicit level)
+   * - Auth metadata structure validation across all tools.
    */
-  public function testToolsListIncludesAuthMetadata(): void {
-    // Create admin user with full permissions.
+  public function testOauthScopeAuthentication(): void {
+    // Create admin user once for all assertions.
     $admin = $this->drupalCreateUser([], NULL, TRUE);
     $this->drupalLogin($admin);
 
-    // Request tools list.
+    // Fetch tools list once.
+    $tools = $this->getToolsList();
+
+    // Test 1: Tools with explicit auth metadata.
+    $tool_with_auth = $this->findToolByName($tools, 'test.methodWithAuth');
+    $this->assertNotNull($tool_with_auth, 'Should find test.methodWithAuth');
+    $this->assertAuthMetadata(
+      $tool_with_auth,
+      ['content:read', 'content:write'],
+      'required',
+      'Tools with auth must include metadata in annotations'
+    );
+
+    // Test 2: Tools without auth metadata.
+    $tool_without_auth = $this->findToolByName($tools, 'test.methodWithoutAuth');
+    $this->assertNotNull($tool_without_auth, 'Should find test.methodWithoutAuth');
+    if (isset($tool_without_auth['annotations'])) {
+      $this->assertArrayNotHasKey(
+        'auth',
+        $tool_without_auth['annotations'],
+        'Tools without auth should not have auth annotation'
+      );
+    }
+
+    // Test 3: Inferred auth level (scopes present, level not explicit).
+    $tool_inferred = $this->findToolByName($tools, 'test.methodWithInferredAuth');
+    $this->assertNotNull($tool_inferred, 'Should find test.methodWithInferredAuth');
+    $this->assertArrayHasKey('annotations', $tool_inferred);
+    $this->assertArrayHasKey('auth', $tool_inferred['annotations']);
+    $auth = $tool_inferred['annotations']['auth'];
+    $this->assertEquals(['user:read'], $auth['scopes']);
+    $this->assertArrayNotHasKey(
+      'level',
+      $auth,
+      'Inferred auth should not have explicit level'
+    );
+
+    // Test 4: Validate auth metadata structure across all tools.
+    $this->validateAuthMetadataStructure($tools);
+  }
+
+  /**
+   * Helper: Fetches and decodes the tools list.
+   *
+   * @return array
+   *   Decoded tools array.
+   */
+  protected function getToolsList(): array {
     $this->drupalGet('/mcp/tools/list');
     $this->assertSession()->statusCodeEquals(200);
 
@@ -67,172 +101,92 @@ class OAuthScopeValidationTest extends BrowserTestBase {
     $this->assertIsArray($data);
     $this->assertArrayHasKey('tools', $data);
 
-    // Find the test method with auth.
-    $tools_with_auth = array_filter($data['tools'], function ($tool) {
-      return ($tool['name'] ?? '') === 'test.methodWithAuth';
-    });
-
-    $this->assertNotEmpty($tools_with_auth, 'Should find test.methodWithAuth in tools list');
-
-    $tool = reset($tools_with_auth);
-
-    // Verify auth metadata is present in annotations.
-    $this->assertArrayHasKey('annotations', $tool);
-    $this->assertArrayHasKey('auth', $tool['annotations']);
-
-    $auth = $tool['annotations']['auth'];
-    $this->assertEquals(['content:read', 'content:write'], $auth['scopes']);
-    $this->assertEquals('required', $auth['level']);
+    return $data['tools'];
   }
 
   /**
-   * Tests that tools without auth metadata don't have auth annotations.
-   */
-  public function testToolsWithoutAuthMetadata(): void {
-    $admin = $this->drupalCreateUser([], NULL, TRUE);
-    $this->drupalLogin($admin);
-
-    $this->drupalGet('/mcp/tools/list');
-    $this->assertSession()->statusCodeEquals(200);
-
-    $response = $this->getSession()->getPage()->getContent();
-    $data = json_decode($response, TRUE);
-
-    // Find the test method without auth.
-    $tools_without_auth = array_filter($data['tools'], function ($tool) {
-      return ($tool['name'] ?? '') === 'test.methodWithoutAuth';
-    });
-
-    $this->assertNotEmpty($tools_without_auth, 'Should find test.methodWithoutAuth in tools list');
-
-    $tool = reset($tools_without_auth);
-
-    // Verify no auth metadata in annotations.
-    if (isset($tool['annotations'])) {
-      $this->assertArrayNotHasKey('auth', $tool['annotations']);
-    }
-  }
-
-  /**
-   * Tests that inferred auth level is not explicitly included.
-   */
-  public function testInferredAuthLevel(): void {
-    $admin = $this->drupalCreateUser([], NULL, TRUE);
-    $this->drupalLogin($admin);
-
-    $this->drupalGet('/mcp/tools/list');
-    $this->assertSession()->statusCodeEquals(200);
-
-    $response = $this->getSession()->getPage()->getContent();
-    $data = json_decode($response, TRUE);
-
-    // Find the test method with inferred auth.
-    $tools_inferred = array_filter($data['tools'], function ($tool) {
-      return ($tool['name'] ?? '') === 'test.methodWithInferredAuth';
-    });
-
-    $this->assertNotEmpty($tools_inferred, 'Should find test.methodWithInferredAuth in tools list');
-
-    $tool = reset($tools_inferred);
-
-    // Verify auth metadata structure (scopes present, level not explicit).
-    $this->assertArrayHasKey('annotations', $tool);
-    $this->assertArrayHasKey('auth', $tool['annotations']);
-
-    $auth = $tool['annotations']['auth'];
-    $this->assertEquals(['user:read'], $auth['scopes']);
-
-    // Level should not be explicitly set (will be inferred as 'required').
-    $this->assertArrayNotHasKey('level', $auth);
-  }
-
-  /**
-   * Documents expected OAuth validation behavior in production.
+   * Helper: Finds a tool by name in the tools array.
    *
-   * This test serves as documentation for the expected behavior when
-   * Simple OAuth is properly configured. It cannot be fully tested
-   * without OAuth infrastructure.
+   * @param array $tools
+   *   Tools array from /mcp/tools/list.
+   * @param string $name
+   *   Tool name to find.
+   *
+   * @return array|null
+   *   Tool definition or NULL if not found.
    */
-  public function testExpectedOAuthBehaviorDocumentation(): void {
-    $this->markTestSkipped('This test documents expected OAuth behavior that requires Simple OAuth module.');
+  protected function findToolByName(array $tools, string $name): ?array {
+    $filtered = array_filter($tools, function ($tool) use ($name) {
+      return ($tool['name'] ?? '') === $name;
+    });
 
-    // The following scenarios should work in production with Simple OAuth:
-    //
-    // Scenario 1: Valid token with required scopes
-    // POST /mcp/tools/invoke
-    // Headers: Authorization: Bearer {token_with_content_read_write}
-    // Body: {"name": "test.methodWithAuth", "arguments": {"input": "test"}}
-    // Expected: 200 OK with result
-    //
-    // Scenario 2: Token missing required scopes
-    // POST /mcp/tools/invoke
-    // Headers: Authorization: Bearer {token_with_only_user_read}
-    // Body: {"name": "test.methodWithAuth", "arguments": {"input": "test"}}
-    // Expected: 403 Forbidden with error:
-    // {
-    //   "jsonrpc": "2.0",
-    //   "error": {
-    //     "code": -32000,
-    //     "message": "Insufficient OAuth scopes",
-    //     "data": {
-    //       "required_scopes": ["content:read", "content:write"],
-    //       "missing_scopes": ["content:read", "content:write"],
-    //       "current_scopes": ["user:read"]
-    //     }
-    //   },
-    //   "id": 1
-    // }
-    //
-    // Scenario 3: No token for required tool
-    // POST /mcp/tools/invoke
-    // Body: {"name": "test.methodWithAuth", "arguments": {"input": "test"}}
-    // Expected: 403 Forbidden with error (missing_scopes = required_scopes)
-    //
-    // Scenario 4: Tool without auth requirements
-    // POST /mcp/tools/invoke
-    // Body: {"name": "test.methodWithoutAuth", "arguments": {}}
-    // Expected: 200 OK with result (no token needed)
-    //
-    // To implement these tests in production:
-    // 1. Enable Simple OAuth module
-    // 2. Create OAuth client via /oauth/token endpoint
-    // 3. Configure scopes in Simple OAuth settings
-    // 4. Generate tokens with specific scopes
-    // 5. Use Guzzle to make authenticated requests
-    // 6. Assert response codes and error structures
+    return !empty($filtered) ? reset($filtered) : NULL;
   }
 
   /**
-   * Tests auth metadata structure validation.
+   * Helper: Asserts auth metadata matches expectations.
+   *
+   * @param array $tool
+   *   Tool definition.
+   * @param array $expectedScopes
+   *   Expected scopes array.
+   * @param string $expectedLevel
+   *   Expected auth level.
+   * @param string $message
+   *   Assertion message.
    */
-  public function testAuthMetadataStructure(): void {
-    $admin = $this->drupalCreateUser([], NULL, TRUE);
-    $this->drupalLogin($admin);
+  protected function assertAuthMetadata(
+    array $tool,
+    array $expectedScopes,
+    string $expectedLevel,
+    string $message = '',
+  ): void {
+    $this->assertArrayHasKey('annotations', $tool, $message);
+    $this->assertArrayHasKey('auth', $tool['annotations'], $message);
 
-    $this->drupalGet('/mcp/tools/list');
-    $response = $this->getSession()->getPage()->getContent();
-    $data = json_decode($response, TRUE);
+    $auth = $tool['annotations']['auth'];
+    $this->assertEquals($expectedScopes, $auth['scopes'], $message);
+    $this->assertEquals($expectedLevel, $auth['level'], $message);
+  }
 
-    foreach ($data['tools'] as $tool) {
+  /**
+   * Helper: Validates auth metadata structure across all tools.
+   *
+   * @param array $tools
+   *   Tools array.
+   */
+  protected function validateAuthMetadataStructure(array $tools): void {
+    foreach ($tools as $tool) {
       if (isset($tool['annotations']['auth'])) {
         $auth = $tool['annotations']['auth'];
+        $tool_name = $tool['name'];
 
         // Auth must have scopes array.
-        $this->assertArrayHasKey('scopes', $auth, "Tool {$tool['name']} auth must have scopes");
-        $this->assertIsArray($auth['scopes'], "Tool {$tool['name']} scopes must be array");
+        $this->assertArrayHasKey(
+          'scopes',
+          $auth,
+          "Tool {$tool_name} auth must have scopes"
+        );
+        $this->assertIsArray(
+          $auth['scopes'],
+          "Tool {$tool_name} scopes must be array"
+        );
 
         // If level present, must be valid.
         if (isset($auth['level'])) {
           $this->assertContains(
             $auth['level'],
             ['none', 'optional', 'required'],
-            "Tool {$tool['name']} auth level must be valid"
+            "Tool {$tool_name} auth level must be valid"
           );
         }
 
-        // Description should be present and string.
+        // Description should be string if present.
         if (isset($auth['description'])) {
-          $this->assertIsString($auth['description'], "Tool {$tool['name']} auth description must be string");
+          $this->assertIsString(
+            $auth['description'],
+            "Tool {$tool_name} auth description must be string"
+          );
         }
       }
     }

@@ -4,4 +4,5 @@ type: module
 core_version_requirement: ^10.2 || ^11
 package: Web services
 dependencies:
-  - jsonrpc:jsonrpc (>= 3.0.0-beta1)
+  - jsonrpc:jsonrpc (>= 3.0.0)
+  - simple_oauth:simple_oauth

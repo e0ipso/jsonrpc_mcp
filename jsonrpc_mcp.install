@@ -11,15 +11,8 @@ use Drupal\jsonrpc_mcp\OAuth\ScopeDefinitions;
  * Implements hook_install().
  */
 function jsonrpc_mcp_install() {
-  // Create OAuth scopes if Simple OAuth module is installed.
+  // Create OAuth scopes in Simple OAuth.
   $entity_type_manager = \Drupal::entityTypeManager();
-
-  // Check if consumer_scope entity type exists (Simple OAuth module).
-  if (!$entity_type_manager->hasDefinition('consumer_scope')) {
-    // Simple OAuth is not installed, skip scope creation.
-    return;
-  }
-
   $scope_storage = $entity_type_manager->getStorage('consumer_scope');
 
   foreach (ScopeDefinitions::getScopes() as $scope_id => $scope_info) {

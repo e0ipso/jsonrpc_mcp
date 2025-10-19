@@ -11,5 +11,6 @@ services:
     arguments:
       - '@http_kernel.basic'
       - '@jsonrpc_mcp.tool_discovery'
+      - '@simple_oauth.oauth2_storage'
     tags:
       - { name: http_middleware, priority: 200, responder: true }
