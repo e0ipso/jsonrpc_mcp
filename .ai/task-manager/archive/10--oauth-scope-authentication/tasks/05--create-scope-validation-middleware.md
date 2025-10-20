@@ -1,23 +1,27 @@
 ---
 id: 5
-group: "oauth-scope-system"
+group: 'oauth-scope-system'
 dependencies: [1, 3]
-status: "completed"
-created: "2025-10-19"
+status: 'completed'
+created: '2025-10-19'
 skills:
   - php
   - drupal-backend
 ---
+
 # Create OAuth Scope Validation Middleware
 
 ## Objective
+
 Implement HTTP middleware to validate OAuth scopes before tool invocation, blocking unauthorized requests with detailed error messages.
 
 ## Skills Required
+
 - **php**: Implementation of Symfony HttpKernel middleware
 - **drupal-backend**: Integration with Drupal services and Simple OAuth module
 
 ## Acceptance Criteria
+
 - [ ] File `src/Middleware/OAuthScopeValidator.php` is created
 - [ ] Class implements `HttpKernelInterface`
 - [ ] Middleware intercepts only `/mcp/tools/invoke` requests
@@ -31,6 +35,7 @@ Implement HTTP middleware to validate OAuth scopes before tool invocation, block
 Use your internal Todo tool to track these and keep on track.
 
 ## Technical Requirements
+
 - **Namespace**: `Drupal\jsonrpc_mcp\Middleware`
 - **Class name**: `OAuthScopeValidator`
 - **Implements**: `Symfony\Component\HttpKernel\HttpKernelInterface`
@@ -38,19 +43,23 @@ Use your internal Todo tool to track these and keep on track.
 - **Error code**: -32000 (JSON-RPC custom error)
 
 ## Input Dependencies
+
 - Task 1: Requires ScopeDefinitions for scope validation
 - Task 3: Requires tool instances with getRequiredScopes() and requiresAuthentication()
 
 ## Output Artifacts
+
 - `src/Middleware/OAuthScopeValidator.php` - Registered in services in task 6
 
 <details>
 <summary>Implementation Notes</summary>
 
 ### File Location
+
 Create file at: `src/Middleware/OAuthScopeValidator.php`
 
 ### Middleware Implementation
+
 ```php
 <?php
 
@@ -194,13 +203,16 @@ class OAuthScopeValidator implements HttpKernelInterface {
 6. **Graceful degradation**: Return empty scopes if Simple OAuth unavailable
 
 ### Error Handling
+
 - Invalid JSON in request body: Pass to wrapped kernel (will return appropriate error)
 - Tool not found: Pass to wrapped kernel (discovery service filters by permissions)
 - Token parsing fails: Treat as empty scopes (will fail validation if scopes required)
 - Simple OAuth service missing: Treat as empty scopes
 
 ### Verification
+
 After implementation:
+
 1. Run `vendor/bin/phpcs --standard=Drupal,DrupalPractice src/Middleware/OAuthScopeValidator.php`
 2. Test with valid token containing required scopes (should pass through)
 3. Test with token missing required scopes (should return 403)

@@ -1,6 +1,6 @@
 ---
 id: 10
-summary: "Implement OAuth scope-aware tool discovery and validation for MCP tools with authentication metadata"
+summary: 'Implement OAuth scope-aware tool discovery and validation for MCP tools with authentication metadata'
 created: 2025-10-19
 approval_method: auto
 ---
@@ -16,6 +16,7 @@ approval_method: auto
 This plan implements OAuth 2.1 scope-based authentication and authorization for MCP tools in the jsonrpc_mcp module. The implementation adds authentication metadata to tool definitions, enabling MCP clients to determine required OAuth scopes before tool invocation and receive clear error messages when permissions are missing.
 
 The solution extends the existing MCP tool infrastructure with:
+
 1. OAuth scope definitions and management system
 2. Enhanced tool annotations with authentication metadata
 3. Runtime scope validation middleware
@@ -37,6 +38,7 @@ The jsonrpc_mcp module currently exposes JSON-RPC methods as MCP tools with basi
 - Tool definitions lack authentication requirement metadata
 
 The existing codebase includes:
+
 - `McpToolsController` for tool discovery and invocation
 - `McpToolDiscoveryService` for filtering accessible tools
 - `McpToolNormalizer` for converting JSON-RPC methods to MCP format
@@ -61,6 +63,7 @@ After implementing this plan, the module will:
 This implementation is driven by the need to integrate Drupal MCP tools with OAuth-aware MCP clients. The specification in drupal-changes.md defines the complete authentication metadata schema and implementation requirements, based on OAuth 2.1 standards and MCP protocol specifications.
 
 The design follows Drupal best practices:
+
 - Using PHP attributes for declarative metadata
 - Implementing services for business logic
 - Leveraging dependency injection
@@ -74,15 +77,17 @@ The design follows Drupal best practices:
 **Objective**: Create a centralized system for defining, validating, and querying OAuth scopes
 
 Implementation creates `src/OAuth/ScopeDefinitions.php` as a static utility class providing:
+
 - `getScopes()`: Returns array of all defined scopes with labels and descriptions
 - `isValid($scope)`: Validates scope existence
 - `getScopeInfo($scope)`: Retrieves scope metadata
 
 Scope categories include:
+
 - **profile**: Basic user profile access
-- **content:*****: Content CRUD operations (read, write, delete)
+- **content:\*\*\***: Content CRUD operations (read, write, delete)
 - **content_type:read**: Content type configuration access
-- **user:*****: User account operations (read, write)
+- **user:\*\*\***: User account operations (read, write)
 - **admin:access**: Administrative access
 
 This component establishes the foundation for scope-based authorization throughout the module.
@@ -92,12 +97,14 @@ This component establishes the foundation for scope-based authorization througho
 **Objective**: Add authentication metadata methods to the tool plugin interface and base class
 
 Extends the existing plugin system with new methods:
+
 - `getAuthMetadata()`: Returns auth configuration from plugin definition
 - `getAuthLevel()`: Returns inferred authentication level ('none', 'optional', 'required')
 - `requiresAuthentication()`: Boolean check for required authentication
 - `getRequiredScopes()`: Returns array of required OAuth scopes
 
 Implementation includes intelligent level inference:
+
 - Scopes present + level undefined → 'required'
 - No scopes + no level → 'none'
 - Explicit level overrides inference
@@ -117,6 +124,7 @@ Changes maintain existing cache strategy (PERMANENT cache with jsonrpc_mcp:disco
 **Objective**: Implement runtime scope validation for tool invocations
 
 Creates `src/Middleware/OAuthScopeValidator.php` implementing `HttpKernelInterface` to:
+
 1. Intercept requests to `/mcp/tools/invoke`
 2. Extract tool name from request body
 3. Load tool definition and check authentication requirements
@@ -126,6 +134,7 @@ Creates `src/Middleware/OAuthScopeValidator.php` implementing `HttpKernelInterfa
 7. Pass through to handler if validation succeeds
 
 Error response format:
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -146,6 +155,7 @@ Error response format:
 **Objective**: Register defined OAuth scopes with the Simple OAuth module during module installation
 
 Creates `jsonrpc_mcp.install` with `hook_install()` implementation that:
+
 1. Loads `ScopeDefinitions::getScopes()`
 2. Iterates through each scope definition
 3. Checks for existing scope entities to prevent duplicates
@@ -165,6 +175,7 @@ Updates `jsonrpc_mcp.services.yml` to register the middleware service with prope
 **Objective**: Ensure all components function correctly through unit, kernel, and functional tests
 
 Test coverage includes:
+
 - **Unit Tests**: Scope validation logic, auth metadata extraction, level inference
 - **Kernel Tests**: Service integration, plugin discovery with auth metadata
 - **Functional Tests**: End-to-end OAuth flow, middleware validation, error responses
@@ -197,32 +208,32 @@ graph TD
 ### Technical Risks
 
 - **Simple OAuth Dependency**: Module assumes Simple OAuth is installed and configured
-    - **Mitigation**: Document Simple OAuth as required dependency, add runtime checks for service availability, provide clear error messages if missing
+  - **Mitigation**: Document Simple OAuth as required dependency, add runtime checks for service availability, provide clear error messages if missing
 
 - **Scope Synchronization**: OAuth scopes defined in code may drift from database entities
-    - **Mitigation**: Implement update hooks for scope changes, document migration process, consider scope definition validation on module enable
+  - **Mitigation**: Implement update hooks for scope changes, document migration process, consider scope definition validation on module enable
 
 - **Middleware Performance**: Additional validation layer adds latency to tool invocations
-    - **Mitigation**: Implement efficient scope extraction, cache tool definitions, optimize middleware execution path, skip validation for non-authenticated tools
+  - **Mitigation**: Implement efficient scope extraction, cache tool definitions, optimize middleware execution path, skip validation for non-authenticated tools
 
 ### Implementation Risks
 
 - **Backward Compatibility**: Existing tools without auth metadata must continue functioning
-    - **Mitigation**: Implement safe defaults (default to 'profile' scope for backward compatibility), thoroughly test migration scenarios, document upgrade path
+  - **Mitigation**: Implement safe defaults (default to 'profile' scope for backward compatibility), thoroughly test migration scenarios, document upgrade path
 
 - **Access Token Parsing**: Token scope extraction depends on Simple OAuth internals
-    - **Mitigation**: Use stable Simple OAuth APIs, add error handling for token parsing failures, test with various token formats
+  - **Mitigation**: Use stable Simple OAuth APIs, add error handling for token parsing failures, test with various token formats
 
 - **Attribute Reflection**: PHP attribute detection via Reflection API may have edge cases
-    - **Mitigation**: Add comprehensive error handling, test with various plugin implementations, validate attribute parsing in unit tests
+  - **Mitigation**: Add comprehensive error handling, test with various plugin implementations, validate attribute parsing in unit tests
 
 ### Integration Risks
 
 - **MCP Client Compatibility**: Clients must handle auth metadata correctly
-    - **Mitigation**: Follow MCP specification exactly, test with reference client implementations, provide clear documentation
+  - **Mitigation**: Follow MCP specification exactly, test with reference client implementations, provide clear documentation
 
 - **JSON-RPC Handler Integration**: Middleware must not interfere with normal JSON-RPC processing
-    - **Mitigation**: Limit middleware scope to `/mcp/tools/invoke` endpoint only, preserve JSON-RPC error handling, test non-MCP JSON-RPC endpoints
+  - **Mitigation**: Limit middleware scope to `/mcp/tools/invoke` endpoint only, preserve JSON-RPC error handling, test non-MCP JSON-RPC endpoints
 
 ## Success Criteria
 
@@ -317,35 +328,49 @@ graph TD
 ## Execution Blueprint
 
 **Validation Gates:**
+
 - Reference: `.ai/task-manager/config/hooks/POST_PHASE.md`
 
 ### ✅ Phase 1: Foundation
+
 **Parallel Tasks:**
+
 - ✔️ Task 001: Create OAuth Scope Definition System
 
 ### ✅ Phase 2: Parallel Foundation Extensions
+
 **Parallel Tasks:**
+
 - ✔️ Task 002: Create McpToolInterface with Authentication Methods (depends on: 001)
 - ✔️ Task 007: Implement Simple OAuth Integration (depends on: 001)
 
 ### ✅ Phase 3: Plugin System Implementation
+
 **Parallel Tasks:**
+
 - ✔️ Task 003: Implement McpToolBase Authentication Methods (depends on: 002)
 
 ### ✅ Phase 4: API and Middleware Integration
+
 **Parallel Tasks:**
+
 - ✔️ Task 004: Update McpToolsController to Include Auth Metadata (depends on: 003)
 - ✔️ Task 005: Create OAuth Scope Validation Middleware (depends on: 001, 003)
 
 ### ✅ Phase 5: Service Configuration
+
 **Parallel Tasks:**
+
 - ✔️ Task 006: Register OAuth Scope Validator Middleware in Services (depends on: 005)
 
 ### ✅ Phase 6: Comprehensive Testing
+
 **Parallel Tasks:**
+
 - ✔️ Task 008: Test OAuth Scope Authentication System (depends on: 001, 002, 003, 004, 005, 006, 007)
 
 ### Execution Summary
+
 - Total Phases: 6
 - Total Tasks: 8
 - Maximum Parallelism: 2 tasks (in Phase 2 and Phase 4)
@@ -404,6 +429,7 @@ All 8 tasks completed successfully across 6 phases:
 ### Files Created
 
 **Core Implementation:**
+
 - `src/OAuth/ScopeDefinitions.php`
 - `src/Plugin/McpToolInterface.php`
 - `src/Plugin/McpToolBase.php`
@@ -411,6 +437,7 @@ All 8 tasks completed successfully across 6 phases:
 - `jsonrpc_mcp.install`
 
 **Test Files:**
+
 - `tests/src/Unit/ScopeDefinitionsTest.php`
 - `tests/src/Unit/McpToolBaseAuthTest.php`
 - `tests/src/Kernel/ToolDiscoveryAuthTest.php`
@@ -419,6 +446,7 @@ All 8 tasks completed successfully across 6 phases:
 - `tests/modules/jsonrpc_mcp_auth_test/*` (test module with 3 methods)
 
 **Files Modified:**
+
 - `jsonrpc_mcp.services.yml` (middleware registration)
 - `src/Normalizer/McpToolNormalizer.php` (auth metadata extraction)
 - `tests/src/Unit/Normalizer/McpToolNormalizerTest.php` (updated for auth metadata)
@@ -426,6 +454,7 @@ All 8 tasks completed successfully across 6 phases:
 ### Test Results
 
 **Unit Tests** (100% passing):
+
 - ScopeDefinitionsTest: 5/5 tests passing
   - Validates all 8 scopes with correct structure
   - Tests isValid() with valid and invalid scopes
@@ -436,6 +465,7 @@ All 8 tasks completed successfully across 6 phases:
   - Tests getRequiredScopes() extraction
 
 **Kernel Tests** (80% passing):
+
 - ToolDiscoveryAuthTest: 4/5 tests passing
   - ✅ Discovery finds tools with auth metadata
   - ✅ Discovery handles tools without auth metadata
@@ -444,6 +474,7 @@ All 8 tasks completed successfully across 6 phases:
   - ⚠️ Permission test (environment setup issue - non-blocking)
 
 **Functional Tests**:
+
 - OAuthScopeValidationTest: Middleware configuration documented
   - Tests document expected behavior with Simple OAuth integration
   - Test environment dependency injection issues documented
@@ -460,6 +491,7 @@ All 8 tasks completed successfully across 6 phases:
 ### Success Criteria Achievement
 
 **Primary Success Criteria:**
+
 - ✅ `/mcp/tools/list` endpoint returns tools with auth metadata
 - ✅ OAuth scope validation middleware intercepts tool invocations
 - ✅ Tools without scopes work without authentication (level: 'none')
@@ -467,6 +499,7 @@ All 8 tasks completed successfully across 6 phases:
 - ✅ Simple OAuth hard dependency enforced
 
 **Quality Metrics:**
+
 - ✅ Unit tests: 100% passing (12/12 tests)
 - ✅ Kernel tests: 80% passing (4/5 tests)
 - ✅ Code follows Drupal coding standards (PHPCS compliant)

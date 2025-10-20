@@ -1,23 +1,27 @@
 ---
 id: 1
-group: "oauth-scope-system"
+group: 'oauth-scope-system'
 dependencies: []
-status: "completed"
-created: "2025-10-19"
+status: 'completed'
+created: '2025-10-19'
 skills:
   - php
   - drupal-backend
 ---
+
 # Create OAuth Scope Definition System
 
 ## Objective
+
 Create a centralized OAuth scope management system that defines, validates, and provides metadata for all OAuth scopes used in MCP tool authentication.
 
 ## Skills Required
+
 - **php**: Implementation of static utility class with PHP 8.1+
 - **drupal-backend**: Understanding of Drupal module structure and naming conventions
 
 ## Acceptance Criteria
+
 - [ ] File `src/OAuth/ScopeDefinitions.php` is created with proper namespace
 - [ ] Class provides `getScopes()` method returning array of scope definitions
 - [ ] Class provides `isValid($scope)` method for scope validation
@@ -29,6 +33,7 @@ Create a centralized OAuth scope management system that defines, validates, and 
 Use your internal Todo tool to track these and keep on track.
 
 ## Technical Requirements
+
 - **Namespace**: `Drupal\jsonrpc_mcp\OAuth`
 - **Class name**: `ScopeDefinitions`
 - **Methods**: Static methods only (utility class pattern)
@@ -36,18 +41,22 @@ Use your internal Todo tool to track these and keep on track.
 - **Documentation**: Full PHPDoc comments for class and methods
 
 ## Input Dependencies
+
 None - This is the foundation component with no dependencies.
 
 ## Output Artifacts
+
 - `src/OAuth/ScopeDefinitions.php` - Used by middleware, install hooks, and plugin base classes
 
 <details>
 <summary>Implementation Notes</summary>
 
 ### File Location
+
 Create file at: `src/OAuth/ScopeDefinitions.php`
 
 ### Class Structure
+
 ```php
 <?php
 
@@ -134,13 +143,16 @@ class ScopeDefinitions {
 ```
 
 ### Scope Design Principles
+
 - Use colon-separated namespacing (e.g., `content:read`)
 - Keep scope names lowercase
 - Each scope represents a distinct permission level
 - Scopes are additive (multiple scopes grant combined permissions)
 
 ### Verification
+
 After creating the file, verify:
+
 1. Run `vendor/bin/phpcs --standard=Drupal,DrupalPractice src/OAuth/ScopeDefinitions.php`
 2. Check namespace and class name match file location
 3. Verify all 8 scopes are present with correct structure

@@ -41,7 +41,12 @@ function findTaskManagerRoot() {
 
   // Traverse upward through parent directories until we reach the filesystem root
   while (currentPath !== filesystemRoot) {
-    const taskManagerPlansPath = path.join(currentPath, '.ai', 'task-manager', 'plans');
+    const taskManagerPlansPath = path.join(
+      currentPath,
+      '.ai',
+      'task-manager',
+      'plans',
+    );
     debugLog(`Checking for task manager at: ${taskManagerPlansPath}`);
 
     try {
@@ -54,7 +59,9 @@ function findTaskManagerRoot() {
           debugLog(`Found valid task manager root at: ${taskManagerRoot}`);
           return taskManagerRoot;
         } else {
-          debugLog(`Path exists but is not a directory: ${taskManagerPlansPath}`);
+          debugLog(
+            `Path exists but is not a directory: ${taskManagerPlansPath}`,
+          );
         }
       } else {
         debugLog(`Task manager path does not exist: ${taskManagerPlansPath}`);
@@ -67,7 +74,9 @@ function findTaskManagerRoot() {
         console.warn(warningMsg);
         debugLog(`Permission error: ${err.message}`);
       } else {
-        debugLog(`Filesystem error checking ${taskManagerPlansPath}: ${err.message}`);
+        debugLog(
+          `Filesystem error checking ${taskManagerPlansPath}: ${err.message}`,
+        );
       }
     }
 
@@ -86,14 +95,25 @@ function findTaskManagerRoot() {
 
   // Check the filesystem root as the final attempt
   try {
-    const rootTaskManagerPlans = path.join(filesystemRoot, '.ai', 'task-manager', 'plans');
+    const rootTaskManagerPlans = path.join(
+      filesystemRoot,
+      '.ai',
+      'task-manager',
+      'plans',
+    );
     debugLog(`Final check at filesystem root: ${rootTaskManagerPlans}`);
 
     if (fs.existsSync(rootTaskManagerPlans)) {
       const stats = fs.lstatSync(rootTaskManagerPlans);
       if (stats.isDirectory()) {
-        const taskManagerRoot = path.join(filesystemRoot, '.ai', 'task-manager');
-        debugLog(`Found task manager root at filesystem root: ${taskManagerRoot}`);
+        const taskManagerRoot = path.join(
+          filesystemRoot,
+          '.ai',
+          'task-manager',
+        );
+        debugLog(
+          `Found task manager root at filesystem root: ${taskManagerRoot}`,
+        );
         return taskManagerRoot;
       }
     }
@@ -137,34 +157,34 @@ function extractIdFromFrontmatter(content, filePath = 'unknown') {
   const patterns = [
     // Most flexible pattern - handles quoted/unquoted keys and values with optional spaces
     {
-      regex: /^\s*["']?id["']?\s*:\s*["']?([+-]?\d+)["']?\s*(?:#.*)?$/mi,
-      description: 'Flexible pattern with optional quotes and comments'
+      regex: /^\s*["']?id["']?\s*:\s*["']?([+-]?\d+)["']?\s*(?:#.*)?$/im,
+      description: 'Flexible pattern with optional quotes and comments',
     },
     // Simple numeric with optional whitespace and comments
     {
-      regex: /^\s*id\s*:\s*([+-]?\d+)\s*(?:#.*)?$/mi,
-      description: 'Simple numeric with optional comments'
+      regex: /^\s*id\s*:\s*([+-]?\d+)\s*(?:#.*)?$/im,
+      description: 'Simple numeric with optional comments',
     },
     // Double quoted values
     {
-      regex: /^\s*["']?id["']?\s*:\s*"([+-]?\d+)"\s*(?:#.*)?$/mi,
-      description: 'Double quoted values'
+      regex: /^\s*["']?id["']?\s*:\s*"([+-]?\d+)"\s*(?:#.*)?$/im,
+      description: 'Double quoted values',
     },
     // Single quoted values
     {
-      regex: /^\s*["']?id["']?\s*:\s*'([+-]?\d+)'\s*(?:#.*)?$/mi,
-      description: 'Single quoted values'
+      regex: /^\s*["']?id["']?\s*:\s*'([+-]?\d+)'\s*(?:#.*)?$/im,
+      description: 'Single quoted values',
     },
     // Mixed quotes - quoted key, unquoted value
     {
-      regex: /^\s*["']id["']\s*:\s*([+-]?\d+)\s*(?:#.*)?$/mi,
-      description: 'Quoted key, unquoted value'
+      regex: /^\s*["']id["']\s*:\s*([+-]?\d+)\s*(?:#.*)?$/im,
+      description: 'Quoted key, unquoted value',
     },
     // YAML-style with pipe or greater-than indicators (edge case)
     {
-      regex: /^\s*id\s*:\s*[|>]\s*([+-]?\d+)\s*$/mi,
-      description: 'YAML block scalar indicators'
-    }
+      regex: /^\s*id\s*:\s*[|>]\s*([+-]?\d+)\s*$/im,
+      description: 'YAML block scalar indicators',
+    },
   ];
 
   // Try each pattern in order
@@ -181,17 +201,23 @@ function extractIdFromFrontmatter(content, filePath = 'unknown') {
 
       // Validate the parsed ID
       if (isNaN(id)) {
-        errorLog(`Invalid ID value "${rawId}" in ${filePath} - not a valid number`);
+        errorLog(
+          `Invalid ID value "${rawId}" in ${filePath} - not a valid number`,
+        );
         continue;
       }
 
       if (id < 0) {
-        errorLog(`Invalid ID value ${id} in ${filePath} - ID must be non-negative`);
+        errorLog(
+          `Invalid ID value ${id} in ${filePath} - ID must be non-negative`,
+        );
         continue;
       }
 
       if (id > Number.MAX_SAFE_INTEGER) {
-        errorLog(`Invalid ID value ${id} in ${filePath} - ID exceeds maximum safe integer`);
+        errorLog(
+          `Invalid ID value ${id} in ${filePath} - ID exceeds maximum safe integer`,
+        );
         continue;
       }
 
@@ -203,15 +229,17 @@ function extractIdFromFrontmatter(content, filePath = 'unknown') {
   }
 
   // If no patterns matched, try to identify common issues
-  debugLog(`All patterns failed for ${filePath}. Analyzing frontmatter for common issues...`);
+  debugLog(
+    `All patterns failed for ${filePath}. Analyzing frontmatter for common issues...`,
+  );
 
   // Check for 'id' field existence (case-insensitive)
-  const hasIdField = /^\s*["']?id["']?\s*:/mi.test(frontmatterText);
+  const hasIdField = /^\s*["']?id["']?\s*:/im.test(frontmatterText);
   if (!hasIdField) {
     debugLog(`No 'id' field found in frontmatter of ${filePath}`);
   } else {
     // ID field exists but didn't match - might be malformed
-    const idLineMatch = frontmatterText.match(/^\s*["']?id["']?\s*:.*$/mi);
+    const idLineMatch = frontmatterText.match(/^\s*["']?id["']?\s*:.*$/im);
     if (idLineMatch) {
       const idLine = idLineMatch[0].trim();
       errorLog(`Found malformed ID line in ${filePath}: "${idLine}"`);
@@ -222,7 +250,9 @@ function extractIdFromFrontmatter(content, filePath = 'unknown') {
       } else if (idLine.match(/:\s*$/)) {
         errorLog(`ID field has missing value in ${filePath}`);
       } else if (idLine.includes('[') || idLine.includes('{')) {
-        errorLog(`ID field appears to be array/object instead of number in ${filePath}`);
+        errorLog(
+          `ID field appears to be array/object instead of number in ${filePath}`,
+        );
       } else {
         errorLog(`ID field has unrecognized format in ${filePath}`);
       }
@@ -241,11 +271,19 @@ function getNextPlanId() {
   const taskManagerRoot = findTaskManagerRoot();
 
   if (!taskManagerRoot) {
-    errorLog('No .ai/task-manager/plans directory found in current directory or any parent directory.');
+    errorLog(
+      'No .ai/task-manager/plans directory found in current directory or any parent directory.',
+    );
     errorLog('');
-    errorLog('Please ensure you are in a project with task manager initialized, or navigate to the correct');
-    errorLog('project directory. The task manager looks for the .ai/task-manager/plans structure starting');
-    errorLog('from the current working directory and traversing upward through parent directories.');
+    errorLog(
+      'Please ensure you are in a project with task manager initialized, or navigate to the correct',
+    );
+    errorLog(
+      'project directory. The task manager looks for the .ai/task-manager/plans structure starting',
+    );
+    errorLog(
+      'from the current working directory and traversing upward through parent directories.',
+    );
     errorLog('');
     errorLog(`Current working directory: ${process.cwd()}`);
     process.exit(1);
@@ -283,10 +321,15 @@ function getNextPlanId() {
           debugLog(`Scanning plan directory: ${planDirPath}`);
 
           try {
-            const planDirEntries = fs.readdirSync(planDirPath, { withFileTypes: true });
+            const planDirEntries = fs.readdirSync(planDirPath, {
+              withFileTypes: true,
+            });
 
             planDirEntries.forEach(planEntry => {
-              if (planEntry.isFile() && planEntry.name.match(/^plan-\d+--.*\.md$/)) {
+              if (
+                planEntry.isFile() &&
+                planEntry.name.match(/^plan-\d+--.*\.md$/)
+              ) {
                 filesScanned++;
                 const filePath = path.join(planDirPath, planEntry.name);
                 debugLog(`Processing plan file: ${filePath}`);
@@ -297,7 +340,9 @@ function getNextPlanId() {
                 if (dirMatch) {
                   dirId = parseInt(dirMatch[1], 10);
                   if (!isNaN(dirId)) {
-                    debugLog(`Extracted ID ${dirId} from directory name: ${entry.name}`);
+                    debugLog(
+                      `Extracted ID ${dirId} from directory name: ${entry.name}`,
+                    );
                     if (dirId > maxId) {
                       maxId = dirId;
                       debugLog(`New max ID from directory name: ${maxId}`);
@@ -311,7 +356,9 @@ function getNextPlanId() {
                 if (filenameMatch) {
                   filenameId = parseInt(filenameMatch[1], 10);
                   if (!isNaN(filenameId)) {
-                    debugLog(`Extracted ID ${filenameId} from filename: ${planEntry.name}`);
+                    debugLog(
+                      `Extracted ID ${filenameId} from filename: ${planEntry.name}`,
+                    );
                     if (filenameId > maxId) {
                       maxId = filenameId;
                       debugLog(`New max ID from filename: ${maxId}`);
@@ -322,10 +369,15 @@ function getNextPlanId() {
                 // Also check frontmatter for most reliable ID
                 try {
                   const content = fs.readFileSync(filePath, 'utf8');
-                  const frontmatterId = extractIdFromFrontmatter(content, filePath);
+                  const frontmatterId = extractIdFromFrontmatter(
+                    content,
+                    filePath,
+                  );
 
                   if (frontmatterId !== null) {
-                    debugLog(`Extracted ID ${frontmatterId} from frontmatter: ${filePath}`);
+                    debugLog(
+                      `Extracted ID ${frontmatterId} from frontmatter: ${filePath}`,
+                    );
                     if (frontmatterId > maxId) {
                       maxId = frontmatterId;
                       debugLog(`New max ID from frontmatter: ${maxId}`);
@@ -333,17 +385,23 @@ function getNextPlanId() {
 
                     // Validate consistency between all sources
                     if (dirId !== null && dirId !== frontmatterId) {
-                      errorLog(`ID mismatch in ${filePath}: directory has ${dirId}, frontmatter has ${frontmatterId}`);
+                      errorLog(
+                        `ID mismatch in ${filePath}: directory has ${dirId}, frontmatter has ${frontmatterId}`,
+                      );
                       errorsEncountered++;
                     }
                     if (filenameId !== null && filenameId !== frontmatterId) {
-                      errorLog(`ID mismatch in ${filePath}: filename has ${filenameId}, frontmatter has ${frontmatterId}`);
+                      errorLog(
+                        `ID mismatch in ${filePath}: filename has ${filenameId}, frontmatter has ${frontmatterId}`,
+                      );
                       errorsEncountered++;
                     }
                   } else {
                     debugLog(`No ID found in frontmatter: ${filePath}`);
                     if (dirId === null && filenameId === null) {
-                      errorLog(`No valid ID found in directory, filename, or frontmatter: ${filePath}`);
+                      errorLog(
+                        `No valid ID found in directory, filename, or frontmatter: ${filePath}`,
+                      );
                       errorsEncountered++;
                     }
                   }
@@ -354,7 +412,9 @@ function getNextPlanId() {
               }
             });
           } catch (err) {
-            errorLog(`Failed to read plan directory ${planDirPath}: ${err.message}`);
+            errorLog(
+              `Failed to read plan directory ${planDirPath}: ${err.message}`,
+            );
             errorsEncountered++;
           }
         } else if (entry.isFile() && entry.name.match(/^plan-\d+--.*\.md$/)) {
@@ -369,7 +429,9 @@ function getNextPlanId() {
           if (filenameMatch) {
             filenameId = parseInt(filenameMatch[1], 10);
             if (!isNaN(filenameId)) {
-              debugLog(`Extracted ID ${filenameId} from legacy filename: ${entry.name}`);
+              debugLog(
+                `Extracted ID ${filenameId} from legacy filename: ${entry.name}`,
+              );
               if (filenameId > maxId) {
                 maxId = filenameId;
                 debugLog(`New max ID from legacy filename: ${maxId}`);
@@ -383,7 +445,9 @@ function getNextPlanId() {
             const frontmatterId = extractIdFromFrontmatter(content, filePath);
 
             if (frontmatterId !== null) {
-              debugLog(`Extracted ID ${frontmatterId} from legacy frontmatter: ${filePath}`);
+              debugLog(
+                `Extracted ID ${frontmatterId} from legacy frontmatter: ${filePath}`,
+              );
               if (frontmatterId > maxId) {
                 maxId = frontmatterId;
                 debugLog(`New max ID from legacy frontmatter: ${maxId}`);
@@ -391,13 +455,17 @@ function getNextPlanId() {
 
               // Validate consistency between filename and frontmatter
               if (filenameId !== null && filenameId !== frontmatterId) {
-                errorLog(`ID mismatch in legacy ${filePath}: filename has ${filenameId}, frontmatter has ${frontmatterId}`);
+                errorLog(
+                  `ID mismatch in legacy ${filePath}: filename has ${filenameId}, frontmatter has ${frontmatterId}`,
+                );
                 errorsEncountered++;
               }
             } else {
               debugLog(`No ID found in legacy frontmatter: ${filePath}`);
               if (filenameId === null) {
-                errorLog(`No valid ID found in legacy filename or frontmatter: ${filePath}`);
+                errorLog(
+                  `No valid ID found in legacy filename or frontmatter: ${filePath}`,
+                );
                 errorsEncountered++;
               }
             }
@@ -418,10 +486,14 @@ function getNextPlanId() {
   });
 
   const nextId = maxId + 1;
-  debugLog(`Scan complete. Files scanned: ${filesScanned}, Errors: ${errorsEncountered}, Max ID found: ${maxId}, Next ID: ${nextId}`);
+  debugLog(
+    `Scan complete. Files scanned: ${filesScanned}, Errors: ${errorsEncountered}, Max ID found: ${maxId}, Next ID: ${nextId}`,
+  );
 
   if (errorsEncountered > 0) {
-    errorLog(`Encountered ${errorsEncountered} errors during scan. Next ID calculation may be inaccurate.`);
+    errorLog(
+      `Encountered ${errorsEncountered} errors during scan. Next ID calculation may be inaccurate.`,
+    );
   }
 
   return nextId;

@@ -1,23 +1,27 @@
 ---
 id: 3
-group: "plugin-system"
+group: 'plugin-system'
 dependencies: [2]
-status: "completed"
-created: "2025-10-19"
+status: 'completed'
+created: '2025-10-19'
 skills:
   - php
   - drupal-backend
 ---
+
 # Implement McpToolBase Authentication Methods
 
 ## Objective
+
 Implement authentication-related methods in the McpToolBase abstract class with intelligent auth level inference and backward compatibility.
 
 ## Skills Required
+
 - **php**: Implementation of interface methods with complex logic
 - **drupal-backend**: Understanding of Drupal plugin base classes and attribute handling
 
 ## Acceptance Criteria
+
 - [ ] File `src/Plugin/McpToolBase.php` is created or updated
 - [ ] Class implements McpToolInterface
 - [ ] Method `getAuthMetadata()` extracts auth from plugin definition annotations
@@ -30,6 +34,7 @@ Implement authentication-related methods in the McpToolBase abstract class with 
 Use your internal Todo tool to track these and keep on track.
 
 ## Technical Requirements
+
 - **Namespace**: `Drupal\jsonrpc_mcp\Plugin`
 - **Class name**: `McpToolBase`
 - **Extends**: `Drupal\Component\Plugin\PluginBase`
@@ -37,18 +42,22 @@ Use your internal Todo tool to track these and keep on track.
 - **Logic**: Implement auth level inference as specified in plan
 
 ## Input Dependencies
+
 - Task 2: Requires McpToolInterface to implement
 
 ## Output Artifacts
+
 - `src/Plugin/McpToolBase.php` - Base class extended by all MCP tool plugins
 
 <details>
 <summary>Implementation Notes</summary>
 
 ### File Location
+
 Create or update file at: `src/Plugin/McpToolBase.php`
 
 ### Class Implementation
+
 ```php
 <?php
 
@@ -120,18 +129,23 @@ abstract class McpToolBase extends PluginBase implements McpToolInterface {
 ```
 
 ### Auth Level Inference Logic
+
 The inference follows this priority:
+
 1. **Explicit level**: If `auth['level']` is set, use it (highest priority)
 2. **Scope-based inference**: If scopes array exists and non-empty, infer 'required'
 3. **Default to 'none'**: If no auth metadata or no scopes, default to 'none'
 
 ### Backward Compatibility
+
 - Tools without `#[McpTool]` attribute: Return NULL from getAuthMetadata(), level = 'none'
 - Tools with `#[McpTool]` but no auth annotation: Return NULL, level = 'none'
 - This ensures existing tools continue working without modification
 
 ### Plugin Definition Structure
+
 The auth metadata is accessed via:
+
 ```php
 $definition['annotations']['auth'] = [
   'scopes' => ['content:read'],
@@ -141,7 +155,9 @@ $definition['annotations']['auth'] = [
 ```
 
 ### Verification
+
 After implementation:
+
 1. Run `vendor/bin/phpcs --standard=Drupal,DrupalPractice src/Plugin/McpToolBase.php`
 2. Test inference logic manually with different auth metadata configurations
 3. Verify backward compatibility with tools without auth metadata

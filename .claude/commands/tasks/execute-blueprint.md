@@ -2,6 +2,7 @@
 argument-hint: [plan-ID]
 description: Execute the task in the plan
 ---
+
 # Task Execution
 
 ## Assistant Configuration
@@ -9,6 +10,7 @@ description: Execute the task in the plan
 Before proceeding with this command, you MUST load and respect the assistant's configuration:
 
 **Run the following scripts:**
+
 ```bash
 ASSISTANT=$(node .ai/task-manager/config/scripts/detect-assistant.cjs)
 node .ai/task-manager/config/scripts/read-assistant-config.cjs "$ASSISTANT"
@@ -29,6 +31,7 @@ You are the orchestrator responsible for executing all tasks defined in the exec
 5. **Fail safely** - Better to halt and request help than corrupt the execution state
 
 ## Input Requirements
+
 - A plan document with an execution blueprint section. See /TASK_MANAGER.md fo find the plan with ID $1
 - Task files with frontmatter metadata (id, group, dependencies, status)
 - Validation gates document: `/config/hooks/POST_PHASE.md`
@@ -46,17 +49,20 @@ Before proceeding with execution, validate that tasks exist and the execution bl
 **Validation Steps:**
 
 1. **Locate the plan document**:
+
 ```bash
 PLAN_FILE=$(find .ai/task-manager/{plans,archive} -name "plan-[0-9][0-9]*--*.md" -type f -exec grep -l "^id: \?$1$" {} \;)
 PLAN_DIR=$(dirname "$PLAN_FILE")
 ```
 
 2. **Check for task files**:
+
 ```bash
 TASK_COUNT=$(ls "$PLAN_DIR"/tasks/*.md 2>/dev/null | wc -l)
 ```
 
 3. **Check for execution blueprint section**:
+
 ```bash
 BLUEPRINT_EXISTS=$(grep -q "^## Execution Blueprint" "$PLAN_FILE" && echo "yes" || echo "no")
 ```
@@ -64,19 +70,23 @@ BLUEPRINT_EXISTS=$(grep -q "^## Execution Blueprint" "$PLAN_FILE" && echo "yes" 
 4. **Automatic task generation**:
 
 If either `$TASK_COUNT` is 0 or `$BLUEPRINT_EXISTS` is "no":
-   - Display notification to user: "⚠️ Tasks or execution blueprint not found. Generating tasks automatically..."
-   - Use the SlashCommand tool to invoke task generation:
-   ```
-   /tasks:generate-tasks $1
-   ```
-   - **CRITICAL**: After task generation completes successfully, you MUST immediately proceed with blueprint execution without waiting for user input. The workflow should continue seamlessly.
-   - If generation fails: Halt execution with clear error message:
-     ```
-     ❌ Error: Automatic task generation failed.
 
-     Please run the following command manually to generate tasks:
-     /tasks:generate-tasks $1
-     ```
+- Display notification to user: "⚠️ Tasks or execution blueprint not found. Generating tasks automatically..."
+- Use the SlashCommand tool to invoke task generation:
+
+```
+/tasks:generate-tasks $1
+```
+
+- **CRITICAL**: After task generation completes successfully, you MUST immediately proceed with blueprint execution without waiting for user input. The workflow should continue seamlessly.
+- If generation fails: Halt execution with clear error message:
+
+  ```
+  ❌ Error: Automatic task generation failed.
+
+  Please run the following command manually to generate tasks:
+  /tasks:generate-tasks $1
+  ```
 
 **After successful validation or generation**, immediately proceed with the execution process below without pausing.
 
@@ -105,37 +115,37 @@ Read and execute .ai/task-manager/config/hooks/PRE_PHASE.md
 ### Phase Execution Workflow
 
 1. **Phase Initialization**
-    - Identify current phase from the execution blueprint
-    - List all tasks scheduled for parallel execution in this phase
+   - Identify current phase from the execution blueprint
+   - List all tasks scheduled for parallel execution in this phase
 
 2. **Agent Selection and Task Assignment**
-Read and execute .ai/task-manager/config/hooks/PRE_TASK_ASSIGNMENT.md
+   Read and execute .ai/task-manager/config/hooks/PRE_TASK_ASSIGNMENT.md
 
 3. **Parallel Execution**
-    - Deploy all selected agents simultaneously using your internal Task tool
-    - Monitor execution progress for each task
-    - Capture outputs and artifacts from each agent
-    - Update task status in real-time
+   - Deploy all selected agents simultaneously using your internal Task tool
+   - Monitor execution progress for each task
+   - Capture outputs and artifacts from each agent
+   - Update task status in real-time
 
 4. **Phase Completion Verification**
-    - Ensure all tasks in the phase have status: "completed"
-    - Collect and review all task outputs
-    - Document any issues or exceptions encountered
+   - Ensure all tasks in the phase have status: "completed"
+   - Collect and review all task outputs
+   - Document any issues or exceptions encountered
 
 ### Phase Post-Execution
 
 Read and execute .ai/task-manager/config/hooks/POST_PHASE.md
 
-
 ### Phase Transition
 
-  - Update phase status to "completed" in the Blueprint section of the plan $1 document.
-  - Initialize next phase
-  - Repeat process until all phases are complete
+- Update phase status to "completed" in the Blueprint section of the plan $1 document.
+- Initialize next phase
+- Repeat process until all phases are complete
 
 ### Error Handling
 
 #### Validation Gate Failures
+
 Read and execute .ai/task-manager/config/hooks/POST_ERROR_DETECTION.md
 
 ### Output Requirements
@@ -194,6 +204,7 @@ Append an execution summary section to the plan document with the format describ
 After successfully appending the execution summary:
 
 **Move completed plan to archive**:
+
 ```bash
 mv .ai/task-manager/plans/[plan-folder] .ai/task-manager/archive/
 ```

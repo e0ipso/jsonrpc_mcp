@@ -2,6 +2,7 @@
 argument-hint: [user-prompt]
 description: Execute the full workflow from plan creation to blueprint execution
 ---
+
 # Full Workflow Execution
 
 ## Assistant Configuration
@@ -9,6 +10,7 @@ description: Execute the full workflow from plan creation to blueprint execution
 Before proceeding with this command, you MUST load and respect the assistant's configuration:
 
 **Run the following scripts:**
+
 ```bash
 ASSISTANT=$(node .ai/task-manager/config/scripts/detect-assistant.cjs)
 node .ai/task-manager/config/scripts/read-assistant-config.cjs "$ASSISTANT"
@@ -140,6 +142,7 @@ Plan document: .ai/task-manager/archive/[plan-id]--[plan-name]/plan-[plan-id]--[
 ### Error Handling
 
 If any step fails:
+
 1. Halt execution immediately
 2. Report clear error message indicating which step failed
 3. Preserve all created artifacts (plan, tasks) for manual review
@@ -151,16 +154,19 @@ If any step fails:
 ### Output Requirements
 
 **During Execution:**
+
 - Minimal progress updates at each major step
 - Clear indication of current step (1/4, 2/4, etc.)
 
 **After Completion:**
+
 - Comprehensive summary with plan location
 - Status confirmation (Archived)
 - Next steps for user review
 - Direct link to plan document
 
 **On Error:**
+
 - Clear error message
 - Indication of which step failed
 - Manual recovery instructions

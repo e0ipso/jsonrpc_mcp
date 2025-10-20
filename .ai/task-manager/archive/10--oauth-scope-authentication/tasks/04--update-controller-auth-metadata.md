@@ -1,23 +1,27 @@
 ---
 id: 4
-group: "api-endpoints"
+group: 'api-endpoints'
 dependencies: [3]
-status: "completed"
-created: "2025-10-19"
+status: 'completed'
+created: '2025-10-19'
 skills:
   - php
   - drupal-backend
 ---
+
 # Update McpToolsController to Include Auth Metadata
 
 ## Objective
+
 Modify the `/mcp/tools/list` endpoint to include authentication metadata in tool annotations, enabling MCP clients to determine required OAuth scopes.
 
 ## Skills Required
+
 - **php**: Editing existing controller methods
 - **drupal-backend**: Understanding of Drupal controllers and MCP tool normalization
 
 ## Acceptance Criteria
+
 - [ ] File `src/Controller/McpToolsController.php` is updated
 - [ ] Method `list()` extracts auth metadata from tool instances
 - [ ] Auth metadata is included in tool annotations when present
@@ -28,24 +32,29 @@ Modify the `/mcp/tools/list` endpoint to include authentication metadata in tool
 Use your internal Todo tool to track these and keep on track.
 
 ## Technical Requirements
+
 - **File**: `src/Controller/McpToolsController.php`
 - **Method**: `list(Request $request)`
 - **Logic**: Call `$tool->getAuthMetadata()` and add to annotations if non-null
 - **Cache**: Maintain existing PERMANENT cache with discovery tags
 
 ## Input Dependencies
+
 - Task 3: Requires McpToolBase with getAuthMetadata() method implemented
 
 ## Output Artifacts
+
 - Updated `src/Controller/McpToolsController.php` - Enhanced list endpoint with auth metadata
 
 <details>
 <summary>Implementation Notes</summary>
 
 ### Current Code Location
+
 The controller already exists at `src/Controller/McpToolsController.php`. You need to modify the `list()` method around line 89-92 where annotations are built.
 
 ### Code Changes
+
 Locate the annotation building section in the `list()` method and add auth metadata extraction:
 
 ```php
@@ -69,6 +78,7 @@ Let me check if the normalizer or controller handles annotation building. Lookin
 Let me provide implementation for both approaches:
 
 ### Approach 1: Modify Normalizer (Recommended)
+
 Edit `src/Normalizer/McpToolNormalizer.php` in the `normalize()` method to extract and include auth metadata:
 
 ```php
@@ -98,11 +108,13 @@ if (!empty($annotations)) {
 ```
 
 ### Approach 2: Verify Method Availability
+
 Since the controller uses `$this->normalizer->normalize($method)`, check if the method passed is a `MethodInterface` or actual tool instance. If it's a MethodInterface, we need to access the underlying plugin.
 
 **Best approach**: Modify the normalizer to check for and include auth metadata from the method object.
 
 ### Implementation Steps
+
 1. Open `src/Normalizer/McpToolNormalizer.php`
 2. Locate the `normalize()` method
 3. Find where annotations are built
@@ -110,7 +122,9 @@ Since the controller uses `$this->normalizer->normalize($method)`, check if the 
 5. Test that auth metadata appears in `/mcp/tools/list` response
 
 ### Verification
+
 After modification:
+
 1. Run `vendor/bin/phpcs --standard=Drupal,DrupalPractice src/Normalizer/McpToolNormalizer.php`
 2. Test endpoint: `curl http://site/mcp/tools/list | jq '.tools[0].annotations.auth'`
 3. Verify cache headers remain unchanged
