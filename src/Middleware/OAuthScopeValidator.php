@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\jsonrpc_mcp\Middleware;
 
 use Drupal\Component\Serialization\Json;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\jsonrpc_mcp\Service\McpToolDiscoveryService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,13 +24,13 @@ class OAuthScopeValidator implements HttpKernelInterface {
    *   The wrapped HTTP kernel.
    * @param \Drupal\jsonrpc_mcp\Service\McpToolDiscoveryService $toolDiscovery
    *   The tool discovery service.
-   * @param mixed $oauthStorage
-   *   The Simple OAuth storage service.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
+   *   The entity type manager.
    */
   public function __construct(
     protected HttpKernelInterface $httpKernel,
     protected McpToolDiscoveryService $toolDiscovery,
-    protected $oauthStorage,
+    protected EntityTypeManagerInterface $entityTypeManager,
   ) {}
 
   /**
@@ -105,21 +106,38 @@ class OAuthScopeValidator implements HttpKernelInterface {
       return [];
     }
 
-    $token = substr($authorization, 7);
+    $token_value = substr($authorization, 7);
 
     try {
-      $access_token = $this->oauthStorage->getAccessToken($token);
+      // Load token entity by value.
+      $tokens = $this->entityTypeManager
+        ->getStorage('oauth2_token')
+        ->loadByProperties(['value' => $token_value]);
 
-      if (!$access_token) {
+      if (empty($tokens)) {
+        return [];
+      }
+
+      /** @var \Drupal\simple_oauth\Entity\Oauth2TokenInterface $token */
+      $token = reset($tokens);
+
+      // Check if token is revoked or expired.
+      if ($token->isRevoked() || $token->get('expire')->value < time()) {
         return [];
       }
 
       // Extract scopes from token.
-      $scopes = $access_token->getScopes();
-      return array_map(fn($scope) => $scope->getIdentifier(), $scopes);
+      /** @var \Drupal\simple_oauth\Plugin\Field\FieldType\Oauth2ScopeReferenceItemListInterface $scopes_field */
+      $scopes_field = $token->get('scopes');
+      $scope_ids = [];
+      foreach ($scopes_field->getScopes() as $scope) {
+        $scope_ids[] = $scope;
+      }
+
+      return $scope_ids;
     }
     catch (\Exception $e) {
-      // Token parsing failed, assume no scopes.
+      // Token loading failed, assume no scopes.
       return [];
     }
   }

@@ -8,7 +8,7 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\jsonrpc\Attribute\JsonRpcParameterDefinition;
 use Drupal\jsonrpc\MethodInterface;
 use Drupal\jsonrpc_mcp\Normalizer\McpToolNormalizer;
-use Drupal\Tests\jsonrpc_mcp\Unit\Normalizer\Fixtures;
+use Drupal\Tests\jsonrpc_mcp\Unit\Normalizer\Fixtures\TestMethodWithAuthMetadata;
 use Drupal\Tests\jsonrpc_mcp\Unit\Normalizer\Fixtures\TestMethodWithMcpTool;
 use Drupal\Tests\jsonrpc_mcp\Unit\Normalizer\Fixtures\TestMethodWithOutputSchema;
 use PHPUnit\Framework\TestCase;
@@ -261,7 +261,7 @@ class McpToolNormalizerTest extends TestCase {
     $method->method('getParams')
       ->willReturn([]);
     $method->method('getClass')
-      ->willReturn(Fixtures\TestMethodWithAuthMetadata::class);
+      ->willReturn(TestMethodWithAuthMetadata::class);
 
     $result = $this->normalizer->normalize($method);
 

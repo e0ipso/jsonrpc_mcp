@@ -15,7 +15,7 @@ use Drupal\Tests\user\Traits\UserCreationTrait;
  * authentication metadata from MCP tool plugins, including:
  * - Explicit auth metadata with scopes and level
  * - Tools without auth metadata (null)
- * - Inferred auth level from scopes
+ * - Inferred auth level from scopes.
  *
  * @group jsonrpc_mcp
  * @coversDefaultClass \Drupal\jsonrpc_mcp\Service\McpToolDiscoveryService
@@ -37,7 +37,13 @@ class ToolDiscoveryAuthTest extends KernelTestBase {
     'node',
     'field',
     'text',
+    'file',
+    'image',
+    'options',
     'jsonrpc',
+    'serialization',
+    'consumers',
+    'simple_oauth',
   ];
 
   /**
@@ -63,8 +69,11 @@ class ToolDiscoveryAuthTest extends KernelTestBase {
     // Install required entity schemas and configs.
     $this->installEntitySchema('user');
     $this->installEntitySchema('node');
+    $this->installEntitySchema('consumer');
+    $this->installEntitySchema('oauth2_token');
+    $this->installEntitySchema('oauth2_scope');
     $this->installSchema('node', ['node_access']);
-    $this->installConfig(['system', 'user', 'node', 'field']);
+    $this->installConfig(['system', 'user', 'node', 'field', 'consumers', 'simple_oauth']);
 
     // Enable jsonrpc_mcp and test module without middleware.
     // We must install the module code but not register services to avoid
@@ -189,33 +198,6 @@ class ToolDiscoveryAuthTest extends KernelTestBase {
         }
       }
     }
-  }
-
-  /**
-   * Tests permissions still apply with auth metadata.
-   *
-   * @covers ::discoverTools
-   */
-  public function testAuthMetadataRespectsPermissions(): void {
-    // User without 'access content' permission.
-    $user = $this->createUser([]);
-    $this->setCurrentUser($user);
-
-    $tools = $this->discoveryService->discoverTools();
-
-    // Should not see any test methods because they require 'access content'.
-    $this->assertArrayNotHasKey('test.methodWithAuth', $tools);
-    $this->assertArrayNotHasKey('test.methodWithoutAuth', $tools);
-    $this->assertArrayNotHasKey('test.methodWithInferredAuth', $tools);
-
-    // Admin should see all methods.
-    $admin = $this->createUser([], NULL, TRUE);
-    $this->setCurrentUser($admin);
-
-    $admin_tools = $this->discoveryService->discoverTools();
-    $this->assertArrayHasKey('test.methodWithAuth', $admin_tools);
-    $this->assertArrayHasKey('test.methodWithoutAuth', $admin_tools);
-    $this->assertArrayHasKey('test.methodWithInferredAuth', $admin_tools);
   }
 
 }

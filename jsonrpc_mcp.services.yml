@@ -9,8 +9,7 @@ services:
   jsonrpc_mcp.middleware.oauth_scope_validator:
     class: Drupal\jsonrpc_mcp\Middleware\OAuthScopeValidator
     arguments:
-      - '@http_kernel.basic'
-      - '@jsonrpc_mcp.tool_discovery'
-      - '@simple_oauth.oauth2_storage'
+      $toolDiscovery: '@jsonrpc_mcp.tool_discovery'
+      $entityTypeManager: '@entity_type.manager'
     tags:
-      - { name: http_middleware, priority: 200, responder: true }
+      - { name: http_middleware, priority: 200 }

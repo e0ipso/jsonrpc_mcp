@@ -38,6 +38,7 @@ class ExampleMethodsTest extends BrowserTestBase {
   protected static $modules = [
     'node',
     'jsonrpc',
+    'simple_oauth',
     'jsonrpc_mcp',
     'jsonrpc_mcp_examples',
     'serialization',
