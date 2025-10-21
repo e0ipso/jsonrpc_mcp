@@ -23,7 +23,6 @@ class ScopeDefinitionsTest extends UnitTestCase {
   public function testGetScopes(): void {
     $scopes = ScopeDefinitions::getScopes();
 
-    $this->assertIsArray($scopes);
     $this->assertCount(8, $scopes);
     $this->assertArrayHasKey('profile', $scopes);
     $this->assertArrayHasKey('content:read', $scopes);
