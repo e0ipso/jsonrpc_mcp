@@ -11,17 +11,11 @@
   ],
   "require": {
     "php": ">=8.1",
+    "drupal/core": "^10.2 || ^11",
     "drupal/jsonrpc": "^3",
     "drupal/simple_oauth": "^6"
   },
-  "repositories": [
-    {
-      "type": "composer",
-      "url": "https://packages.drupal.org/8"
-    }
-  ],
   "minimum-stability": "dev",
-  "prefer-stable": true,
   "require-dev": {
     "drupal/coder": "^8",
     "phpstan/phpstan": "^2.1",
