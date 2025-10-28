@@ -2,29 +2,30 @@ jsonrpc_mcp.tools_list:
   path: '/mcp/tools/list'
   defaults:
     _controller: '\Drupal\jsonrpc_mcp\Controller\McpToolsController::list'
-    _title: 'MCP Tools Discovery'
   requirements:
     # Requires 'access mcp tool discovery' permission for tool discovery.
     # Execution permissions are enforced separately by JSON-RPC method plugins.
     _permission: 'access mcp tool discovery'
+  options:
+    _auth: ['oauth2']
 
 jsonrpc_mcp.tools_describe:
   path: '/mcp/tools/describe'
   defaults:
     _controller: '\Drupal\jsonrpc_mcp\Controller\McpToolsController::describe'
-    _title: 'MCP Tool Description'
   requirements:
     _permission: 'access mcp tool discovery'
+  options:
+    _auth: ['oauth2']
 
 jsonrpc_mcp.tools_invoke:
   path: '/mcp/tools/invoke'
   defaults:
     _controller: '\Drupal\jsonrpc_mcp\Controller\McpToolsController::invoke'
-    _title: 'MCP Tool Invocation'
   requirements:
     # Requires base JSON-RPC permission to invoke tools.
     # Individual method permissions are enforced by JSON-RPC access system.
     _permission: 'use jsonrpc services'
-    _method: 'POST'
+  methods: [POST]
   options:
-    no_cache: 'TRUE'
+    _auth: ['oauth2']
