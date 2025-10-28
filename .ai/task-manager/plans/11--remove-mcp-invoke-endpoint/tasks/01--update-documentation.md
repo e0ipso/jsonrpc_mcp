@@ -2,7 +2,7 @@
 id: 1
 group: 'documentation'
 dependencies: []
-status: 'pending'
+status: 'completed'
 created: '2025-10-28'
 skills:
   - markdown
