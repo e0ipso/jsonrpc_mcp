@@ -17,15 +17,3 @@ jsonrpc_mcp.tools_describe:
     _permission: 'access mcp tool discovery'
   options:
     _auth: ['oauth2']
-
-jsonrpc_mcp.tools_invoke:
-  path: '/mcp/tools/invoke'
-  defaults:
-    _controller: '\Drupal\jsonrpc_mcp\Controller\McpToolsController::invoke'
-  requirements:
-    # Requires base JSON-RPC permission to invoke tools.
-    # Individual method permissions are enforced by JSON-RPC access system.
-    _permission: 'use jsonrpc services'
-  methods: [POST]
-  options:
-    _auth: ['oauth2']
