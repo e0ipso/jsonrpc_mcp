@@ -199,7 +199,11 @@ class McpToolsControllerTest extends BrowserTestBase {
     $this->drupalLogin($user);
 
     $this->drupalGet('/mcp/tools/list');
+    $this->assertSession()->statusCodeEquals(200);
     $user_data = json_decode($this->getSession()->getPage()->getContent(), TRUE);
+    $this->assertIsArray($user_data, 'Response should be a valid JSON array');
+    $this->assertArrayHasKey('tools', $user_data, 'Response should contain tools key');
+    $this->assertIsArray($user_data['tools'], 'tools should be an array');
 
     // User with permissions should see all example tools.
     $user_tool_names = array_column($user_data['tools'], 'name');

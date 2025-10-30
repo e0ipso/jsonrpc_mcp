@@ -7,7 +7,7 @@ jsonrpc_mcp.tools_list:
     # Execution permissions are enforced separately by JSON-RPC method plugins.
     _permission: 'access mcp tool discovery'
   options:
-    _auth: ['oauth2']
+    _auth: ['oauth2', 'cookie']
 
 jsonrpc_mcp.tools_describe:
   path: '/mcp/tools/describe'
@@ -16,4 +16,4 @@ jsonrpc_mcp.tools_describe:
   requirements:
     _permission: 'access mcp tool discovery'
   options:
-    _auth: ['oauth2']
+    _auth: ['oauth2', 'cookie']
