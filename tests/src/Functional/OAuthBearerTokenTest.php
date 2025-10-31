@@ -66,7 +66,7 @@ class OAuthBearerTokenTest extends BrowserTestBase {
     ]);
 
     // Create OAuth2 client.
-    $this->createOAuth2Client();
+    $this->createOauthClient();
 
     // Generate access token.
     $this->generateAccessToken();
@@ -75,7 +75,7 @@ class OAuthBearerTokenTest extends BrowserTestBase {
   /**
    * Creates an OAuth2 client entity.
    */
-  protected function createOAuth2Client(): void {
+  protected function createOauthClient(): void {
     /** @var \Drupal\simple_oauth\Entity\Oauth2ClientInterface $client */
     $client = \Drupal::entityTypeManager()
       ->getStorage('oauth2_client')
@@ -113,7 +113,7 @@ class OAuthBearerTokenTest extends BrowserTestBase {
   /**
    * Tests MCP tools list endpoint with OAuth2 Bearer token.
    */
-  public function testListEndpointWithOAuth2(): void {
+  public function testListEndpointWithOauthBearer(): void {
     $client = $this->getHttpClient();
 
     $response = $client->get($this->buildUrl('/mcp/tools/list'), [
@@ -140,7 +140,7 @@ class OAuthBearerTokenTest extends BrowserTestBase {
    * are available without the test module, we expect a 404 for a non-existent
    * tool, but importantly NOT a 403 (which would indicate auth failed).
    */
-  public function testDescribeEndpointWithOAuth2(): void {
+  public function testDescribeEndpointWithOauthBearer(): void {
     $client = $this->getHttpClient();
 
     $response = $client->get($this->buildUrl('/mcp/tools/describe'), [
