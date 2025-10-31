@@ -29,6 +29,7 @@ class OAuthBearerTokenTest extends BrowserTestBase {
   protected static $modules = [
     'jsonrpc',
     'simple_oauth',
+    'simple_oauth_21',
     'jsonrpc_mcp',
   ];
 
