@@ -4,27 +4,23 @@ declare(strict_types=1);
 
 namespace Drupal\jsonrpc_mcp\Controller;
 
-use Drupal\Component\Serialization\Json;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheableJsonResponse;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Controller\ControllerBase;
-use Drupal\jsonrpc\Exception\JsonRpcException;
 use Drupal\jsonrpc\HandlerInterface;
-use Drupal\jsonrpc\JsonRpcObject\ParameterBag;
-use Drupal\jsonrpc\JsonRpcObject\Request as RpcRequest;
 use Drupal\jsonrpc_mcp\Normalizer\McpToolNormalizer;
 use Drupal\jsonrpc_mcp\Service\McpToolDiscoveryService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Controller for MCP tools discovery endpoint.
+ * Controller for MCP tools discovery endpoints.
  *
- * This controller handles the /mcp/tools/list HTTP endpoint, providing
- * MCP-compliant tool discovery with cursor-based pagination. It coordinates
- * the McpToolDiscoveryService and McpToolNormalizer to return JSON-RPC
- * methods marked with the #[McpTool] attribute in MCP tool schema format.
+ * This controller handles the /mcp/tools/list and /mcp/tools/describe HTTP
+ * endpoints, providing MCP-compliant tool discovery and detailed tool schemas.
+ * It coordinates the McpToolDiscoveryService and McpToolNormalizer to return
+ * JSON-RPC methods marked with the #[McpTool] attribute in MCP tool format.
  *
  * Cache tags used:
  * - jsonrpc_mcp:discovery: Invalidated when modules install/uninstall or
@@ -46,6 +42,7 @@ class McpToolsController extends ControllerBase {
   public function __construct(
     protected McpToolDiscoveryService $toolDiscovery,
     protected McpToolNormalizer $normalizer,
+    // @todo Remove HandlerInterface if no longer needed after invoke() removal.
     protected HandlerInterface $handler,
   ) {}
 
@@ -161,129 +158,6 @@ class McpToolsController extends ControllerBase {
     $response->addCacheableDependency($cache_metadata);
 
     return $response;
-  }
-
-  /**
-   * Invokes an MCP tool with JSON-RPC execution.
-   *
-   * Handles the /mcp/tools/invoke endpoint, translating MCP-format requests
-   * to JSON-RPC format, executing via the JSON-RPC handler, and returning
-   * MCP-format responses.
-   *
-   * @param \Symfony\Component\HttpFoundation\Request $request
-   *   The HTTP request object.
-   *
-   * @return \Drupal\Core\Cache\CacheableJsonResponse
-   *   JSON response with 'result' object or 'error' object.
-   */
-  public function invoke(Request $request): CacheableJsonResponse {
-    // Parse JSON request body.
-    $content = $request->getContent();
-    try {
-      $data = Json::decode($content);
-    }
-    catch (\Exception $e) {
-      return new CacheableJsonResponse([
-        'error' => [
-          'code' => 'invalid_json',
-          'message' => 'Request body must be valid JSON',
-        ],
-      ], 400);
-    }
-
-    // Validate JSON decode success.
-    if ($data === NULL || !is_array($data)) {
-      return new CacheableJsonResponse([
-        'error' => [
-          'code' => 'invalid_json',
-          'message' => 'Request body must be valid JSON',
-        ],
-      ], 400);
-    }
-
-    // Validate required parameters.
-    if (!isset($data['name']) || !is_string($data['name'])) {
-      return new CacheableJsonResponse([
-        'error' => [
-          'code' => 'missing_parameter',
-          'message' => 'Required parameter "name" is missing or invalid',
-        ],
-      ], 400);
-    }
-
-    if (!isset($data['arguments']) || !is_array($data['arguments'])) {
-      return new CacheableJsonResponse([
-        'error' => [
-          'code' => 'missing_parameter',
-          'message' => 'Required parameter "arguments" is missing or invalid',
-        ],
-      ], 400);
-    }
-
-    $name = $data['name'];
-    $arguments = $data['arguments'];
-
-    // Validate tool exists and is accessible.
-    $tools = $this->toolDiscovery->discoverTools();
-
-    if (!isset($tools[$name])) {
-      return new CacheableJsonResponse([
-        'error' => [
-          'code' => 'tool_not_found',
-          'message' => sprintf("Tool '%s' not found or access denied", $name),
-        ],
-      ], 404);
-    }
-
-    // Execute via JSON-RPC handler.
-    try {
-      $version = $this->handler::supportedVersion();
-      $params = new ParameterBag($arguments);
-      $rpc_request = new RpcRequest($version, $name, FALSE, uniqid('mcp_', TRUE), $params);
-      $rpc_responses = $this->handler->batch([$rpc_request]);
-
-      // Extract result from JSON-RPC response.
-      if (empty($rpc_responses)) {
-        return new CacheableJsonResponse([
-          'error' => [
-            'code' => 'execution_error',
-            'message' => 'Tool execution returned no response',
-          ],
-        ], 500);
-      }
-
-      $rpc_response = reset($rpc_responses);
-
-      if ($rpc_response->isErrorResponse()) {
-        $error = $rpc_response->getError();
-        return new CacheableJsonResponse([
-          'error' => [
-            'code' => 'execution_error',
-            'message' => $error->getMessage(),
-          ],
-        ], 500);
-      }
-
-      return new CacheableJsonResponse([
-        'result' => $rpc_response->getResult(),
-      ]);
-    }
-    catch (JsonRpcException $e) {
-      return new CacheableJsonResponse([
-        'error' => [
-          'code' => 'execution_error',
-          'message' => sprintf('Tool execution failed: %s', $e->getMessage()),
-        ],
-      ], 500);
-    }
-    catch (\Exception $e) {
-      return new CacheableJsonResponse([
-        'error' => [
-          'code' => 'execution_error',
-          'message' => sprintf('Tool execution failed: %s', $e->getMessage()),
-        ],
-      ], 500);
-    }
   }
 
 }

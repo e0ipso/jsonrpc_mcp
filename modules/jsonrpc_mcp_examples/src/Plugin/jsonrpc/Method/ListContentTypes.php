@@ -25,7 +25,14 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 )]
 #[McpTool(
   title: "List Content Types",
-  annotations: ['category' => 'discovery']
+  annotations: [
+    'category' => 'discovery',
+    'auth' => [
+      'scopes' => ['tutorial:read', 'tutorial:search'],
+      'description' => 'Requires content read and write access',
+      'level' => 'required',
+    ],
+  ],
 )]
 class ListContentTypes extends JsonRpcMethodBase {
 

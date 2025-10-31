@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\jsonrpc_mcp\Functional\Controller;
 
-use Drupal\Component\Serialization\Json;
 use Drupal\Tests\BrowserTestBase;
-use GuzzleHttp\RequestOptions;
 
 /**
- * Functional tests for the MCP tools discovery endpoint.
+ * Functional tests for the MCP tools discovery endpoints.
  *
- * Tests the /mcp/tools/list HTTP endpoint including JSON format, MCP
- * compliance, pagination, and access control integration.
+ * Tests the /mcp/tools/list and /mcp/tools/describe HTTP endpoints including
+ * JSON format, MCP compliance, pagination, and access control integration.
  *
  * @group jsonrpc_mcp
  */
@@ -201,7 +199,11 @@ class McpToolsControllerTest extends BrowserTestBase {
     $this->drupalLogin($user);
 
     $this->drupalGet('/mcp/tools/list');
+    $this->assertSession()->statusCodeEquals(200);
     $user_data = json_decode($this->getSession()->getPage()->getContent(), TRUE);
+    $this->assertIsArray($user_data, 'Response should be a valid JSON array');
+    $this->assertArrayHasKey('tools', $user_data, 'Response should contain tools key');
+    $this->assertIsArray($user_data['tools'], 'tools should be an array');
 
     // User with permissions should see all example tools.
     $user_tool_names = array_column($user_data['tools'], 'name');
@@ -313,118 +315,6 @@ class McpToolsControllerTest extends BrowserTestBase {
 
     $this->assertArrayHasKey('error', $data);
     $this->assertEquals('missing_parameter', $data['error']['code']);
-  }
-
-  /**
-   * Tests invoke endpoint successfully executes a tool.
-   */
-  public function testInvokeEndpointSuccess(): void {
-    $user = $this->drupalCreateUser(['access content', 'use jsonrpc services']);
-    $this->drupalLogin($user);
-
-    $url = $this->buildUrl('/mcp/tools/invoke');
-    $client = $this->getHttpClient();
-
-    $response = $client->request('POST', $url, [
-      RequestOptions::HTTP_ERRORS => FALSE,
-      RequestOptions::COOKIES => $this->getSessionCookies(),
-      RequestOptions::HEADERS => ['Content-Type' => 'application/json'],
-      RequestOptions::BODY => Json::encode([
-        'name' => 'examples.contentTypes.list',
-        'arguments' => [],
-      ]),
-    ]);
-
-    $this->assertEquals(200, $response->getStatusCode());
-
-    $body = (string) $response->getBody();
-    $data = Json::decode($body);
-    $this->assertArrayHasKey('result', $data);
-    $this->assertIsArray($data['result']);
-  }
-
-  /**
-   * Tests invoke endpoint returns 404 for non-existent tool.
-   */
-  public function testInvokeEndpointToolNotFound(): void {
-    $user = $this->drupalCreateUser(['access content', 'use jsonrpc services']);
-    $this->drupalLogin($user);
-
-    $url = $this->buildUrl('/mcp/tools/invoke');
-    $client = $this->getHttpClient();
-
-    $response = $client->request('POST', $url, [
-      RequestOptions::HTTP_ERRORS => FALSE,
-      RequestOptions::COOKIES => $this->getSessionCookies(),
-      RequestOptions::HEADERS => ['Content-Type' => 'application/json'],
-      RequestOptions::BODY => Json::encode([
-        'name' => 'nonexistent.tool',
-        'arguments' => [],
-      ]),
-    ]);
-
-    $this->assertEquals(404, $response->getStatusCode());
-
-    $body = (string) $response->getBody();
-    $this->assertNotEmpty($body, 'Response body should not be empty');
-    $data = Json::decode($body);
-    $this->assertArrayHasKey('error', $data);
-    $this->assertEquals('tool_not_found', $data['error']['code']);
-  }
-
-  /**
-   * Tests invoke endpoint returns 400 for malformed request.
-   */
-  public function testInvokeEndpointMalformedRequest(): void {
-    $user = $this->drupalCreateUser(['access content', 'use jsonrpc services']);
-    $this->drupalLogin($user);
-
-    $url = $this->buildUrl('/mcp/tools/invoke');
-    $client = $this->getHttpClient();
-
-    // Test missing 'name'.
-    $response = $client->request('POST', $url, [
-      RequestOptions::HTTP_ERRORS => FALSE,
-      RequestOptions::COOKIES => $this->getSessionCookies(),
-      RequestOptions::HEADERS => ['Content-Type' => 'application/json'],
-      RequestOptions::BODY => Json::encode([
-        'arguments' => [],
-      ]),
-    ]);
-
-    $this->assertEquals(400, $response->getStatusCode());
-
-    $body = (string) $response->getBody();
-    $this->assertNotEmpty($body, 'Response body should not be empty');
-    $data = Json::decode($body);
-    $this->assertArrayHasKey('error', $data);
-    $this->assertEquals('missing_parameter', $data['error']['code']);
-  }
-
-  /**
-   * Tests invoke endpoint returns 400 for invalid JSON.
-   */
-  public function testInvokeEndpointInvalidJson(): void {
-    $user = $this->drupalCreateUser(['access content', 'use jsonrpc services']);
-    $this->drupalLogin($user);
-
-    $url = $this->buildUrl('/mcp/tools/invoke');
-    $client = $this->getHttpClient();
-
-    $response = $client->request('POST', $url, [
-      RequestOptions::HTTP_ERRORS => FALSE,
-      RequestOptions::COOKIES => $this->getSessionCookies(),
-      RequestOptions::HEADERS => ['Content-Type' => 'application/json'],
-      RequestOptions::BODY => '{invalid json}',
-    ]);
-
-    $this->assertEquals(400, $response->getStatusCode());
-
-    $body = (string) $response->getBody();
-    $this->assertNotEmpty($body, 'Response body should not be empty');
-    $data = Json::decode($body);
-    $this->assertArrayHasKey('error', $data);
-    $this->assertEquals('invalid_json', $data['error']['code']);
   }
 
 }
