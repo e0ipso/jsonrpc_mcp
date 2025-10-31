@@ -102,7 +102,7 @@ jobs:
       - name: Install module dependencies
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
-          composer require drupal/jsonrpc:^3@beta drupal/simple_oauth:^6 --no-interaction
+          composer require drupal/jsonrpc:^3@beta drupal/simple_oauth:^6 e0ipso/simple_oauth_21 --no-interaction
 
       - name: Setup module
         working-directory: ${{ env.DRUPAL_ROOT }}/${{ env.MODULE_PATH }}
@@ -136,6 +136,8 @@ jobs:
         working-directory: ${{ env.DRUPAL_ROOT }}
         run: |
           vendor/bin/drush cache:rebuild
+          vendor/bin/drush pm:enable simple_oauth --yes
+          vendor/bin/drush pm:enable simple_oauth_21 --yes
           vendor/bin/drush pm:enable ${{ env.MODULE_NAME }} --yes
 
       - name: Copy deprecation ignore file

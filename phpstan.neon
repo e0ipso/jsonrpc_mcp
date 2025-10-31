@@ -5,7 +5,15 @@ parameters:
     - src/
     - tests/
     - modules/
+  excludePaths:
+    - */node_modules/*
+    - */vendor/*
   ignoreErrors:
     - '#Trying to mock an undefined method .* on class .*ContextRepositoryInterface#'
     - '#Trait Drupal\\jsonrpc_mcp\\Trait\\DebugLoggingTrait is used zero times and is not analysed#'
     - '#Unsafe usage of new static\(\)#'
+    # simple_oauth module classes not available during static analysis
+    - '#unknown class Drupal\\simple_oauth\\#'
+    - '#Call to method .* on an unknown class Drupal\\simple_oauth\\#'
+    # Guzzle ClientInterface doesn't define get() method in interface
+    - '#Call to an undefined method GuzzleHttp\\ClientInterface::get\(\)#'
