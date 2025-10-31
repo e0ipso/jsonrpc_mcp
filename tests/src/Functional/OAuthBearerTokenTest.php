@@ -28,6 +28,7 @@ class OAuthBearerTokenTest extends BrowserTestBase {
    */
   protected static $modules = [
     'jsonrpc',
+    'consumers',
     'simple_oauth',
     'simple_oauth_21',
     'jsonrpc_mcp',
@@ -41,9 +42,9 @@ class OAuthBearerTokenTest extends BrowserTestBase {
   protected $testUser;
 
   /**
-   * OAuth2 client.
+   * OAuth2 consumer (client).
    *
-   * @var \Drupal\simple_oauth\Entity\Oauth2ClientInterface
+   * @var \Drupal\consumers\Entity\ConsumerInterface
    */
   protected $client;
 
@@ -74,20 +75,15 @@ class OAuthBearerTokenTest extends BrowserTestBase {
   }
 
   /**
-   * Creates an OAuth2 client entity.
+   * Creates an OAuth2 consumer (client) entity.
    */
   protected function createOauthClient(): void {
-    /** @var \Drupal\simple_oauth\Entity\Oauth2ClientInterface $client */
+    /** @var \Drupal\consumers\Entity\ConsumerInterface $client */
     $client = \Drupal::entityTypeManager()
-      ->getStorage('oauth2_client')
+      ->getStorage('consumer')
       ->create([
-        'client_id' => 'test_client',
         'label' => 'Test Client',
-        'secret' => 'test_secret',
-        'status' => TRUE,
         'user_id' => $this->testUser->id(),
-        // Use client credentials grant.
-        'grant_types' => ['client_credentials'],
       ]);
     $client->save();
 
