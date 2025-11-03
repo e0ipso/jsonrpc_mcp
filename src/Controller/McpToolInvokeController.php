@@ -195,7 +195,7 @@ class McpToolInvokeController extends ControllerBase {
    * @return \Symfony\Component\HttpFoundation\Response|null
    *   Error response if scopes insufficient, NULL otherwise.
    */
-  protected function validateOAuth2Scopes(Oauth2TokenInterface $token, array $required_scopes): ?Response {
+  protected function validateOauth2Scopes(Oauth2TokenInterface $token, array $required_scopes): ?Response {
     if (empty($required_scopes)) {
       return NULL;
     }
@@ -262,7 +262,7 @@ class McpToolInvokeController extends ControllerBase {
       return $token_result;
     }
 
-    return $this->validateOAuth2Scopes($token_result, $required_scopes);
+    return $this->validateOauth2Scopes($token_result, $required_scopes);
   }
 
   /**
