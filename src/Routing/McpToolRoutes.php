@@ -67,30 +67,32 @@ final class McpToolRoutes implements ContainerInjectionInterface {
   protected function createRouteForTool(string $tool_name, $method): array {
     $route_name = 'jsonrpc_mcp.tool.' . str_replace('.', '_', $tool_name);
     $mcp_data = $this->extractMcpToolData($method);
+
+    // Store auth metadata in route defaults for controller access.
     $auth_level = $mcp_data['annotations']['auth']['level'] ?? NULL;
-    $requires_auth = $auth_level === 'required';
+    $auth_scopes = $mcp_data['annotations']['auth']['scopes'] ?? [];
 
     // Invocation endpoints should not be cached because they execute
-    // state-changing operations.
+    // state-changing operations. Routes are always accessible - the controller
+    // handles all authentication/authorization.
     $route = new Route(
       '/mcp/tools/' . $tool_name,
       [
         '_controller' => '\Drupal\jsonrpc_mcp\Controller\McpToolInvokeController::invoke',
         '_title' => 'Invoke ' . $tool_name,
         'tool_name' => $tool_name,
+        '_mcp_auth_level' => $auth_level,
+        '_mcp_auth_scopes' => $auth_scopes,
+        '_mcp_title' => $mcp_data['title'],
       ],
       [
-        '_access' => $requires_auth ? 'FALSE' : 'TRUE',
+        '_access' => 'TRUE',
       ],
       [
         'no_cache' => TRUE,
         'methods' => ['GET', 'POST'],
       ]
     );
-
-    if ($requires_auth) {
-      $route->setRequirement('_custom_access', '\Drupal\jsonrpc_mcp\Access\McpToolAccessCheck::access');
-    }
 
     return [
       'name' => $route_name,

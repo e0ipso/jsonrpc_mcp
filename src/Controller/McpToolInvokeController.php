@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Drupal\jsonrpc_mcp\Controller;
 
-use Drupal\jsonrpc_mcp\Attribute\McpTool;
 use Drupal\simple_oauth\Entity\Oauth2TokenInterface;
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Controller\ControllerBase;
@@ -18,6 +17,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Route;
 
 /**
  * Controller for per-tool MCP invocation endpoints.
@@ -41,7 +41,7 @@ class McpToolInvokeController extends ControllerBase {
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container): static {
-    return new static(
+    return new self(
       $container->get('jsonrpc_mcp.tool_discovery'),
       $container->get('jsonrpc.handler'),
     );
@@ -70,10 +70,11 @@ class McpToolInvokeController extends ControllerBase {
       );
     }
 
-    $method = $tools[$tool_name];
-    $mcp_data = $this->extractMcpToolData($method);
+    // Extract auth metadata from route defaults to avoid duplicate discovery.
+    $route = $request->attributes->get('_route_object');
+    $auth_metadata = $this->extractAuthMetadataFromRoute($route);
 
-    $auth_response = $this->checkAuthenticationRequirements($mcp_data, $request);
+    $auth_response = $this->checkAuthenticationRequirements($auth_metadata, $request);
     if ($auth_response) {
       return $auth_response;
     }
@@ -157,7 +158,6 @@ class McpToolInvokeController extends ControllerBase {
    */
   protected function validateOauth2Token(string $token_value): Oauth2TokenInterface|Response {
     $token_storage = $this->entityTypeManager()->getStorage('oauth2_token');
-    // @phpstan-ignore-next-line method.alreadyNarrowedType
     $token_ids = $token_storage->getQuery()
       ->accessCheck(FALSE)
       ->condition('value', $token_value)
@@ -219,19 +219,39 @@ class McpToolInvokeController extends ControllerBase {
   }
 
   /**
+   * Extracts auth metadata from route defaults.
+   *
+   * @param \Symfony\Component\Routing\Route|null $route
+   *   The route object.
+   *
+   * @return array
+   *   Auth metadata array with 'level' and 'scopes' keys.
+   */
+  protected function extractAuthMetadataFromRoute(?Route $route): array {
+    if (!$route) {
+      return ['level' => NULL, 'scopes' => []];
+    }
+
+    return [
+      'level' => $route->getDefault('_mcp_auth_level'),
+      'scopes' => $route->getDefault('_mcp_auth_scopes') ?? [],
+    ];
+  }
+
+  /**
    * Checks authentication requirements based on MCP tool annotations.
    *
-   * @param array $mcp_data
-   *   MCP tool metadata array.
+   * @param array $auth_metadata
+   *   Auth metadata array with 'level' and 'scopes' keys.
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   The HTTP request.
    *
    * @return \Symfony\Component\HttpFoundation\Response|null
    *   Error response if auth fails, NULL if auth passes.
    */
-  protected function checkAuthenticationRequirements(array $mcp_data, Request $request): ?Response {
-    $auth_level = $mcp_data['annotations']['auth']['level'] ?? NULL;
-    $required_scopes = $mcp_data['annotations']['auth']['scopes'] ?? [];
+  protected function checkAuthenticationRequirements(array $auth_metadata, Request $request): ?Response {
+    $auth_level = $auth_metadata['level'] ?? NULL;
+    $required_scopes = $auth_metadata['scopes'] ?? [];
 
     if ($auth_level === 'required' && $this->currentUser()->isAnonymous()) {
       return new Response('', 401, [
@@ -338,39 +358,6 @@ class McpToolInvokeController extends ControllerBase {
         'id' => $rpc_payload['id'] ?? NULL,
       ], 500);
     }
-  }
-
-  /**
-   * Extracts McpTool attribute data via reflection.
-   *
-   * @param \Drupal\jsonrpc\MethodInterface $method
-   *   The JSON-RPC method.
-   *
-   * @return array
-   *   Associative array with 'title' and 'annotations' keys.
-   */
-  protected function extractMcpToolData($method): array {
-    // Ensure the class is defined.
-    $class = $method->getClass();
-    if (!$class) {
-      return ['title' => NULL, 'annotations' => NULL];
-    }
-
-    // Use reflection to read the McpTool attribute.
-    $reflection = new \ReflectionClass($class);
-    $attributes = $reflection->getAttributes(McpTool::class);
-
-    if (empty($attributes)) {
-      return ['title' => NULL, 'annotations' => NULL];
-    }
-
-    // Get the first McpTool attribute instance.
-    $mcp_tool = $attributes[0]->newInstance();
-
-    return [
-      'title' => $mcp_tool->title,
-      'annotations' => $mcp_tool->annotations,
-    ];
   }
 
 }
