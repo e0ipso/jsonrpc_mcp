@@ -151,9 +151,13 @@ class McpToolInvokeController extends ControllerBase {
    *
    * @return \Drupal\simple_oauth\Entity\Oauth2TokenInterface|\Symfony\Component\HttpFoundation\Response
    *   The validated token or error response.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
-  protected function validateOAuth2Token(string $token_value): Oauth2TokenInterface|Response {
+  protected function validateOauth2Token(string $token_value): Oauth2TokenInterface|Response {
     $token_storage = $this->entityTypeManager()->getStorage('oauth2_token');
+    // @phpstan-ignore-next-line method.alreadyNarrowedType
     $token_ids = $token_storage->getQuery()
       ->accessCheck(FALSE)
       ->condition('value', $token_value)
@@ -252,7 +256,7 @@ class McpToolInvokeController extends ControllerBase {
     }
 
     $token_value = substr($authorization, 7);
-    $token_result = $this->validateOAuth2Token($token_value);
+    $token_result = $this->validateOauth2Token($token_value);
 
     if ($token_result instanceof Response) {
       return $token_result;
