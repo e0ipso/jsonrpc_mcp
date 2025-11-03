@@ -239,6 +239,73 @@ curl -X POST https://your-site.com/mcp/tools/invoke \
 }
 ```
 
+## Per-Tool Invocation
+
+Each MCP tool is accessible at its own URL following the pattern `/mcp/tools/{tool_name}`, where `{tool_name}` is the JSON-RPC method ID (e.g., `cache.rebuild`). Tools accept standard JSON-RPC 2.0 payloads via both POST (JSON body) and GET (URL-encoded query parameter) requests.
+
+### POST Request
+
+```bash
+curl -X POST https://your-site.com/mcp/tools/cache.rebuild \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -d '{
+    "jsonrpc": "2.0",
+    "method": "cache.rebuild",
+    "params": {},
+    "id": "1"
+  }'
+```
+
+### GET Request
+
+```bash
+PAYLOAD='{"jsonrpc":"2.0","method":"cache.rebuild","params":{},"id":"1"}'
+ENCODED=$(echo -n "$PAYLOAD" | jq -sRr @uri)
+curl "https://your-site.com/mcp/tools/cache.rebuild?query=$ENCODED" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+## Authentication Flow Support
+
+The module implements RFC 6750 compliant OAuth2 bearer token authentication with automatic authentication flow triggering. When tools require authentication (`annotations.auth.level === 'required'` in the `#[McpTool]` attribute), the module returns proper 401 Unauthorized responses with `WWW-Authenticate` headers, enabling MCP clients like Claude Code to automatically initiate authentication flows.
+
+OAuth2 scope validation ensures tokens contain required scopes specified in `annotations.auth.scopes`. Insufficient scopes result in 403 Forbidden responses with missing scope information.
+
+### Authentication Flow Responses
+
+- **Anonymous user**: `401 Unauthorized` with `WWW-Authenticate: Bearer realm="MCP Tools"`
+- **Invalid/expired token**: `401 Unauthorized` with `error="invalid_token"`
+- **Insufficient scopes**: `403 Forbidden` with `error="insufficient_scope", scope="missing_scopes"`
+
+### Example: Tool with Authentication Requirements
+
+```php
+#[JsonRpcMethod(
+  id: "node.delete",
+  usage: new TranslatableMarkup("Deletes a content node."),
+  access: ["delete any content"]
+)]
+#[McpTool(
+  title: "Delete Content Node",
+  annotations: [
+    'auth' => [
+      'level' => 'required',
+      'scopes' => ['content:write', 'content:delete'],
+    ],
+  ]
+)]
+class NodeDelete extends JsonRpcMethodBase {
+  // Implementation...
+}
+```
+
+## Supported Standards
+
+- **MCP Specification (2025-06-18)**: Tool discovery and invocation protocol
+- **RFC 6750**: OAuth 2.0 Bearer Token Usage - Authentication challenges and error responses
+- **JSON-RPC 2.0**: Request/response message format
+
 ### Pagination
 
 When dealing with many tools, use cursor-based pagination:

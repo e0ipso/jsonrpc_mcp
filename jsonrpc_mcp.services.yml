@@ -6,6 +6,19 @@ services:
   jsonrpc_mcp.tool_normalizer:
     class: Drupal\jsonrpc_mcp\Normalizer\McpToolNormalizer
 
+  jsonrpc_mcp.controller.invoke:
+    class: Drupal\jsonrpc_mcp\Controller\McpToolInvokeController
+    arguments:
+      - '@jsonrpc_mcp.tool_discovery'
+      - '@jsonrpc.handler'
+
+  jsonrpc_mcp.access_check.mcp_tool:
+    class: Drupal\jsonrpc_mcp\Access\McpToolAccessCheck
+    arguments:
+      - '@jsonrpc_mcp.tool_discovery'
+    tags:
+      - { name: access_check, applies_to: _custom_access }
+
   jsonrpc_mcp.middleware.oauth_scope_validator:
     class: Drupal\jsonrpc_mcp\Middleware\OAuthScopeValidator
     arguments:
