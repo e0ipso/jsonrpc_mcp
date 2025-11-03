@@ -114,6 +114,65 @@ Tools can require OAuth2 authentication by adding annotations:
 
 **Response Format:** Standard JSON-RPC 2.0 response
 
+### OAuth 2.0 Protected Resource Metadata Integration
+
+The module integrates with simple_oauth_21's `simple_oauth_server_metadata` sub-module to contribute MCP tool metadata to the OAuth 2.0 Protected Resource Metadata endpoint (`/.well-known/oauth-protected-resource`).
+
+**Architecture:**
+
+- `ResourceMetadataSubscriber` listens to `ResourceMetadataEvents::BUILD`
+- Discovers all MCP tools via `McpToolDiscoveryService`
+- Extracts OAuth2 scopes from `#[McpTool(annotations: ['auth' => ['scopes' => [...]]])]`
+- Contributes RFC 9728-compliant fields to metadata response
+
+**Contributed Fields:**
+
+- `scopes_supported`: Aggregated array of all unique scopes from MCP tools (only included if scopes exist)
+- `bearer_methods_supported`: Always `["header"]` per MCP specification
+- `authorization_details_types_supported`: Array of tool names for fine-grained authorization
+
+**Example Response:**
+
+```json
+{
+  "resource": "https://drupal-site.example.com",
+  "authorization_servers": ["https://drupal-site.example.com"],
+  "bearer_methods_supported": ["header"],
+  "scopes_supported": ["mcp_tools", "cache_management", "content_management"],
+  "authorization_details_types_supported": [
+    "cache.rebuild",
+    "node.create",
+    "user.query"
+  ]
+}
+```
+
+**Cache Behavior:**
+
+- Metadata endpoint is cached by `ResourceMetadataService`
+- Cache invalidates when:
+  - Modules are installed/uninstalled (triggers `jsonrpc_mcp:discovery` tag invalidation)
+  - Cache is manually cleared (`drush cr`)
+  - Configuration changes (via `config:simple_oauth_server_metadata.settings` tag)
+
+**Testing:**
+
+```bash
+# View metadata
+curl https://drupal-site/.well-known/oauth-protected-resource | jq
+
+# Verify MCP tool scopes
+curl https://drupal-site/.well-known/oauth-protected-resource | jq '.scopes_supported'
+
+# Test cache invalidation
+drush cr
+curl https://drupal-site/.well-known/oauth-protected-resource | jq
+```
+
+**Optional Dependency:**
+
+The `simple_oauth_server_metadata` sub-module is an optional dependency. If not installed, the event subscriber will not be called and no errors will occur.
+
 ### Caching Implementation
 
 The module implements comprehensive caching for discovery endpoints to optimize performance:
