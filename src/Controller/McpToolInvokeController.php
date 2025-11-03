@@ -30,26 +30,31 @@ class McpToolInvokeController extends ControllerBase {
    *   The tool discovery service.
    * @param \Drupal\jsonrpc\HandlerInterface $handler
    *   The JSON-RPC handler.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
+   *   The entity type manager.
+   * @param \Drupal\Core\Session\AccountProxyInterface $currentUser
+   *   The current user.
    */
   public function __construct(
     protected McpToolDiscoveryService $toolDiscovery,
     protected HandlerInterface $handler,
+    EntityTypeManagerInterface $entityTypeManager,
+    AccountProxyInterface $currentUser,
   ) {
-    // Entity type manager and current user are available via ControllerBase.
+    $this->entityTypeManager = $entityTypeManager;
+    $this->currentUser = $currentUser;
   }
 
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container) {
-    $controller = new self(
+  public static function create(ContainerInterface $container): static {
+    return new static(
       $container->get('jsonrpc_mcp.tool_discovery'),
       $container->get('jsonrpc.handler'),
+      $container->get('entity_type.manager'),
+      $container->get('current_user'),
     );
-    // Set ControllerBase properties.
-    $controller->setEntityTypeManager($container->get('entity_type.manager'));
-    $controller->setCurrentUser($container->get('current_user'));
-    return $controller;
   }
 
   /**
@@ -105,7 +110,14 @@ class McpToolInvokeController extends ControllerBase {
       $token = $tokens ? reset($tokens) : NULL;
 
       // Validate token.
-      if (!$token || $token->isRevoked() || $token->get('expire')->value < time()) {
+      if (!$token instanceof \Drupal\simple_oauth\Entity\Oauth2TokenInterface) {
+        return new Response('', 401, [
+          'WWW-Authenticate' => 'Bearer realm="MCP Tools", error="invalid_token", error_description="The access token is invalid or expired"',
+          'Cache-Control' => 'no-store',
+        ]);
+      }
+
+      if ($token->isRevoked() || $token->get('expire')->value < time()) {
         return new Response('', 401, [
           'WWW-Authenticate' => 'Bearer realm="MCP Tools", error="invalid_token", error_description="The access token is invalid or expired"',
           'Cache-Control' => 'no-store',
