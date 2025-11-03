@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\jsonrpc_mcp\Routing;
 
-use Drupal\jsonrpc_mcp\Service\McpToolDiscoveryService;
+use Drupal\jsonrpc_mcp\Attribute\McpTool;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 
@@ -80,7 +80,7 @@ class McpToolRoutes {
 
     // Use reflection to read the McpTool attribute.
     $reflection = new \ReflectionClass($class);
-    $attributes = $reflection->getAttributes(\Drupal\jsonrpc_mcp\Attribute\McpTool::class);
+    $attributes = $reflection->getAttributes(McpTool::class);
 
     if (empty($attributes)) {
       return ['title' => NULL, 'annotations' => NULL];

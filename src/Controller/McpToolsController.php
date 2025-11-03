@@ -4,15 +4,11 @@ declare(strict_types=1);
 
 namespace Drupal\jsonrpc_mcp\Controller;
 
-use Drupal\Component\Serialization\Json;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheableJsonResponse;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Controller\ControllerBase;
-use Drupal\jsonrpc\Exception\JsonRpcException;
 use Drupal\jsonrpc\HandlerInterface;
-use Drupal\jsonrpc\JsonRpcObject\ParameterBag;
-use Drupal\jsonrpc\JsonRpcObject\Request as RpcRequest;
 use Drupal\jsonrpc_mcp\Normalizer\McpToolNormalizer;
 use Drupal\jsonrpc_mcp\Service\McpToolDiscoveryService;
 use Symfony\Component\HttpFoundation\Request;

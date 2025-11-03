@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\jsonrpc_mcp\Functional\Controller;
 
-use Drupal\Component\Serialization\Json;
 use Drupal\Tests\BrowserTestBase;
-use GuzzleHttp\RequestOptions;
 
 /**
  * Functional tests for the MCP tools discovery endpoint.

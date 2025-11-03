@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Drupal\jsonrpc_mcp\Controller;
 
+use Drupal\jsonrpc_mcp\Attribute\McpTool;
+use Drupal\simple_oauth\Entity\Oauth2TokenInterface;
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -110,7 +112,7 @@ class McpToolInvokeController extends ControllerBase {
       $token = $tokens ? reset($tokens) : NULL;
 
       // Validate token.
-      if (!$token instanceof \Drupal\simple_oauth\Entity\Oauth2TokenInterface) {
+      if (!$token instanceof Oauth2TokenInterface) {
         return new Response('', 401, [
           'WWW-Authenticate' => 'Bearer realm="MCP Tools", error="invalid_token", error_description="The access token is invalid or expired"',
           'Cache-Control' => 'no-store',
@@ -314,7 +316,7 @@ class McpToolInvokeController extends ControllerBase {
 
     // Use reflection to read the McpTool attribute.
     $reflection = new \ReflectionClass($class);
-    $attributes = $reflection->getAttributes(\Drupal\jsonrpc_mcp\Attribute\McpTool::class);
+    $attributes = $reflection->getAttributes(McpTool::class);
 
     if (empty($attributes)) {
       return ['title' => NULL, 'annotations' => NULL];

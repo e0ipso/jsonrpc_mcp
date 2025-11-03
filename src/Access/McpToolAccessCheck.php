@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\jsonrpc_mcp\Access;
 
+use Drupal\jsonrpc_mcp\Attribute\McpTool;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Routing\Access\AccessInterface;
@@ -82,7 +83,7 @@ class McpToolAccessCheck implements AccessInterface {
 
     // Use reflection to read the McpTool attribute.
     $reflection = new \ReflectionClass($class);
-    $attributes = $reflection->getAttributes(\Drupal\jsonrpc_mcp\Attribute\McpTool::class);
+    $attributes = $reflection->getAttributes(McpTool::class);
 
     if (empty($attributes)) {
       return ['title' => NULL, 'annotations' => NULL];
