@@ -68,6 +68,52 @@ MCP Tool Normalizer (converts to MCP schema)
 /mcp/tools/list endpoint (returns MCP-compliant JSON)
 ```
 
+### Per-Tool Invocation Endpoints
+
+Each discovered MCP tool gets its own dedicated invocation endpoint:
+
+**URL Pattern:** `/mcp/tools/{tool_name}`
+
+**Example:** A tool with ID `cache.rebuild` gets endpoint `/mcp/tools/cache.rebuild`
+
+**HTTP Methods:** GET and POST
+
+**Architecture:**
+
+- `McpToolRoutes` dynamically generates routes for all discovered tools
+- Uses `ContainerInjectionInterface` for proper dependency injection
+- `McpToolInvokeController` handles invocation with authentication checks
+- Supports OAuth2 Bearer token authentication with scope validation
+
+**OAuth2 Authentication:**
+
+Tools can require OAuth2 authentication by adding annotations:
+
+```php
+#[McpTool(
+  annotations: [
+    'auth' => [
+      'level' => 'required',
+      'scopes' => ['mcp_tools', 'content_management']
+    ]
+  ]
+)]
+```
+
+**Token Validation:**
+
+- Tokens are queried with expiration check (only non-expired tokens loaded)
+- Revocation status is verified
+- Required scopes are validated against token scopes
+- Returns proper OAuth2 error responses (401/403 with WWW-Authenticate header)
+
+**Request Format:**
+
+- POST: JSON-RPC payload in request body
+- GET: JSON-RPC payload in `query` parameter (URL-encoded JSON)
+
+**Response Format:** Standard JSON-RPC 2.0 response
+
 ### Caching Implementation
 
 The module implements comprehensive caching for discovery endpoints to optimize performance:
@@ -75,7 +121,7 @@ The module implements comprehensive caching for discovery endpoints to optimize 
 **Cache Strategy:**
 
 - **Discovery endpoints** (`/mcp/tools/list`, `/mcp/tools/describe`): Permanent caching via `CacheableJsonResponse`
-- **Invoke endpoint** (`/mcp/tools/invoke`): Never cached (executes state-changing operations)
+- **Per-tool invocation endpoints** (`/mcp/tools/{tool_name}`): Never cached (executes state-changing operations)
 - **Error responses**: Never cached (max-age 0)
 
 **Cache Tags:**
@@ -107,6 +153,17 @@ drush php:eval "\Drupal::service('jsonrpc_mcp.tool_discovery')->invalidateDiscov
 # Test cache behavior
 curl -I /mcp/tools/list  # Check cache headers
 drush cr && curl /mcp/tools/list | jq  # Fresh discovery after cache clear
+
+# Test per-tool invocation
+curl -X POST /mcp/tools/cache.rebuild \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"cache.rebuild","params":{},"id":1}'
+
+# Test with OAuth2 token
+curl -X POST /mcp/tools/cache.rebuild \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"cache.rebuild","params":{},"id":1}'
 ```
 
 ### Key Mapping Rules
