@@ -52,7 +52,7 @@ class McpToolsController extends ControllerBase {
    *   The controller.
    */
   public static function create(ContainerInterface $container) {
-    return new self(
+    return new static(
       $container->get('jsonrpc_mcp.tool_discovery'),
       $container->get('jsonrpc_mcp.tool_normalizer'),
       $container->get('jsonrpc.handler'),

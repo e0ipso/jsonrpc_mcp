@@ -41,7 +41,7 @@ class McpToolInvokeController extends ControllerBase {
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container): static {
-    return new self(
+    return new static(
       $container->get('jsonrpc_mcp.tool_discovery'),
       $container->get('jsonrpc.handler'),
     );

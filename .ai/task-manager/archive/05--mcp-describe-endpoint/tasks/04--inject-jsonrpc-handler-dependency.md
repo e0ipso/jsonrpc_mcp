@@ -46,7 +46,7 @@ public function __construct(
 ```php
 public static function create(ContainerInterface $container) {
   // @phpstan-ignore-next-line return.type
-  return new self(
+  return new static(
     $container->get('jsonrpc_mcp.tool_discovery'),
     $container->get('jsonrpc_mcp.tool_normalizer'),
     $container->get('jsonrpc.handler'),
