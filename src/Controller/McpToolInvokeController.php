@@ -158,6 +158,7 @@ class McpToolInvokeController extends ControllerBase {
    */
   protected function validateOauth2Token(string $token_value): Oauth2TokenInterface|Response {
     $token_storage = $this->entityTypeManager()->getStorage('oauth2_token');
+    // @phpstan-ignore-next-line method.alreadyNarrowedType
     $token_ids = $token_storage->getQuery()
       ->accessCheck(FALSE)
       ->condition('value', $token_value)
