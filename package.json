@@ -1,7 +1,7 @@
 {
-  "name": "proxy_block",
+  "name": "jsonrpc_mcp",
   "version": "1.0.0",
-  "description": "Drupal module for rendering proxy blocks",
+  "description": "Drupal module to handle MCP requests",
   "private": true,
   "scripts": {
     "lint:check": "eslint .",
