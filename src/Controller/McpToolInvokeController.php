@@ -4,19 +4,24 @@ declare(strict_types=1);
 
 namespace Drupal\jsonrpc_mcp\Controller;
 
-use Drupal\simple_oauth\Entity\Oauth2TokenInterface;
-use Drupal\Component\Serialization\Json;
+use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
+use Drupal\Component\Plugin\Exception\PluginNotFoundException;
+use Drupal\Core\Cache\CacheableJsonResponse;
+use Drupal\Core\Cache\CacheableResponse;
+use Drupal\Core\Cache\CacheableResponseInterface;
 use Drupal\Core\Controller\ControllerBase;
-use Drupal\jsonrpc\Exception\JsonRpcException;
+use Drupal\jsonrpc\Controller\HttpController;
+use Drupal\jsonrpc\Exception\ErrorHandler;
 use Drupal\jsonrpc\HandlerInterface;
 use Drupal\jsonrpc\JsonRpcObject\Error;
-use Drupal\jsonrpc\JsonRpcObject\ParameterBag;
-use Drupal\jsonrpc\JsonRpcObject\Request as RpcRequest;
 use Drupal\jsonrpc_mcp\Service\McpToolDiscoveryService;
+use Drupal\simple_oauth\Entity\Oauth2TokenInterface;
+use Drupal\simple_oauth\Server\ResourceServerFactoryInterface;
+use League\OAuth2\Server\Exception\OAuthServerException;
+use Symfony\Bridge\PsrHttpMessage\HttpFoundationFactoryInterface;
+use Symfony\Bridge\PsrHttpMessage\HttpMessageFactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Route;
 
 /**
@@ -31,19 +36,41 @@ class McpToolInvokeController extends ControllerBase {
    *   The tool discovery service.
    * @param \Drupal\jsonrpc\HandlerInterface $handler
    *   The JSON-RPC handler.
+   * @param \Drupal\jsonrpc\Controller\HttpController $jsonRpcController
+   *   The JSON-RPC HTTP controller.
+   * @param \Symfony\Bridge\PsrHttpMessage\HttpMessageFactoryInterface $httpMessageFactory
+   *   The PSR-7 HTTP message factory.
+   * @param \Drupal\simple_oauth\Server\ResourceServerFactoryInterface $resourceServerFactory
+   *   The OAuth2 resource server factory.
+   * @param \Symfony\Bridge\PsrHttpMessage\HttpFoundationFactoryInterface $httpFoundationFactory
+   *   The HTTP foundation factory.
    */
   public function __construct(
     protected McpToolDiscoveryService $toolDiscovery,
     protected HandlerInterface $handler,
+    protected HttpController $jsonRpcController,
+    protected HttpMessageFactoryInterface $httpMessageFactory,
+    protected ResourceServerFactoryInterface $resourceServerFactory,
+    protected HttpFoundationFactoryInterface $httpFoundationFactory,
   ) {}
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container): static {
+    // OAuth library.
     return new static(
       $container->get('jsonrpc_mcp.tool_discovery'),
       $container->get('jsonrpc.handler'),
+      new HttpController(
+        $container->get('service_container'),
+        $container->get('jsonrpc.handler'),
+        $container->get('jsonrpc.schema_validator'),
+        $container->get(ErrorHandler::class),
+      ),
+      $container->get('psr7.http_message_factory'),
+      $container->get('simple_oauth.server.resource_server.factory'),
+      $container->get('psr7.http_foundation_factory'),
     );
   }
 
@@ -55,10 +82,10 @@ class McpToolInvokeController extends ControllerBase {
    * @param string $tool_name
    *   The tool name from the route.
    *
-   * @return \Symfony\Component\HttpFoundation\Response
+   * @return \Drupal\Core\Cache\CacheableResponseInterface
    *   The response.
    */
-  public function invoke(Request $request, string $tool_name): Response {
+  public function invoke(Request $request, string $tool_name): CacheableResponseInterface {
     $tools = $this->toolDiscovery->discoverTools();
 
     if (!isset($tools[$tool_name])) {
@@ -79,107 +106,60 @@ class McpToolInvokeController extends ControllerBase {
       return $auth_response;
     }
 
-    $rpc_payload_result = $this->extractRpcPayload($request);
-    if ($rpc_payload_result instanceof Response) {
-      return $rpc_payload_result;
-    }
-
-    $rpc_payload_result['method'] = $tool_name;
-
-    return $this->delegateToJsonRpc($rpc_payload_result);
-  }
-
-  /**
-   * Extracts JSON-RPC payload from the request.
-   *
-   * @param \Symfony\Component\HttpFoundation\Request $request
-   *   The HTTP request.
-   *
-   * @return array|\Symfony\Component\HttpFoundation\Response
-   *   The RPC payload array or error response.
-   */
-  protected function extractRpcPayload(Request $request): array|Response {
-    $rpc_payload = NULL;
-
-    if ($request->getMethod() === 'GET') {
-      $query_payload = $request->query->get('query');
-
-      if (!$query_payload) {
-        return $this->createErrorResponse(
-          Error::INVALID_REQUEST,
-          'Invalid Request: Missing query parameter'
-        );
-      }
-
-      try {
-        $rpc_payload = Json::decode($query_payload);
-      }
-      catch (\Exception $e) {
-        return $this->createErrorResponse(Error::PARSE_ERROR, 'Parse error');
-      }
-    }
-    else {
-      $content = $request->getContent();
-
-      try {
-        $rpc_payload = Json::decode($content);
-      }
-      catch (\Exception $e) {
-        return $this->createErrorResponse(Error::PARSE_ERROR, 'Parse error');
-      }
-    }
-
-    if ($rpc_payload === NULL || !is_array($rpc_payload)) {
-      return $this->createErrorResponse(Error::PARSE_ERROR, 'Parse error');
-    }
-
-    if (!isset($rpc_payload['jsonrpc']) || $rpc_payload['jsonrpc'] !== '2.0') {
-      return $this->createErrorResponse(
-        Error::INVALID_REQUEST,
-        'Invalid Request',
-        $rpc_payload['id'] ?? NULL
-      );
-    }
-
-    return $rpc_payload;
+    return $this->jsonRpcController->resolve($request);
   }
 
   /**
    * Validates OAuth2 token and returns token or error response.
    *
-   * @param string $token_value
-   *   The Bearer token value.
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The request.
    *
-   * @return \Drupal\simple_oauth\Entity\Oauth2TokenInterface|\Symfony\Component\HttpFoundation\Response
+   * @return \Drupal\simple_oauth\Entity\Oauth2TokenInterface|\Drupal\Core\Cache\CacheableResponse
    *   The validated token or error response.
-   *
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
-  protected function validateOauth2Token(string $token_value): Oauth2TokenInterface|Response {
-    $token_storage = $this->entityTypeManager()->getStorage('oauth2_token');
-    // @phpstan-ignore-next-line method.alreadyNarrowedType
-    $token_ids = $token_storage->getQuery()
-      ->accessCheck(FALSE)
-      ->condition('value', $token_value)
-      ->condition('expire', time(), '>')
-      ->execute();
+  protected function validateOauth2Token(Request $request): Oauth2TokenInterface|CacheableResponse {
+    // Update the request with the OAuth information.
+    try {
+      // Create a PSR-7 message from the request that is compatible with the
+      // OAuth library.
+      $psr7_request = $this->httpMessageFactory->createRequest($request);
+      $resource_server = $this->resourceServerFactory->get();
+      $output_psr7_request = $resource_server->validateAuthenticatedRequest($psr7_request);
 
-    if (empty($token_ids)) {
-      return new Response('', 401, [
+      // Convert back to the Drupal/Symfony HttpFoundation objects.
+      $auth_request = $this->httpFoundationFactory->createRequest($output_psr7_request);
+    }
+    catch (OAuthServerException $exception) {
+      $response = new CacheableResponse('', 401, [
         'WWW-Authenticate' => 'Bearer realm="MCP Tools", error="invalid_token", error_description="The access token is invalid or expired"',
-        'Cache-Control' => 'no-store',
       ]);
+      $response->getCacheableMetadata()->setCacheMaxAge(0)->addCacheContexts(['user']);
+      return $response;
     }
 
-    $tokens = $token_storage->loadMultiple($token_ids);
+    try {
+      $token_storage = $this->entityTypeManager()->getStorage('oauth2_token');
+    }
+    catch (InvalidPluginDefinitionException | PluginNotFoundException  $e) {
+      $response = new CacheableResponse('', 401, [
+        'WWW-Authenticate' => 'Bearer realm="MCP Tools", error="invalid_token", error_description="Fatal server error"',
+      ]);
+      $response->getCacheableMetadata()->setCacheMaxAge(0)->addCacheContexts(['user']);
+      return $response;
+    }
+    $tokens = $token_storage
+      ->loadByProperties([
+        'value' => $auth_request->get('oauth_access_token_id'),
+      ]);
     $token = reset($tokens);
 
     if (!$token instanceof Oauth2TokenInterface || $token->isRevoked()) {
-      return new Response('', 401, [
+      $response = new CacheableResponse('', 401, [
         'WWW-Authenticate' => 'Bearer realm="MCP Tools", error="invalid_token", error_description="The access token is invalid or expired"',
-        'Cache-Control' => 'no-store',
       ]);
+      $response->getCacheableMetadata()->setCacheMaxAge(0)->addCacheContexts(['user']);
+      return $response;
     }
 
     return $token;
@@ -193,30 +173,40 @@ class McpToolInvokeController extends ControllerBase {
    * @param array $required_scopes
    *   Required scope IDs.
    *
-   * @return \Symfony\Component\HttpFoundation\Response|null
+   * @return \Drupal\Core\Cache\CacheableResponse|null
    *   Error response if scopes insufficient, NULL otherwise.
    */
-  protected function validateOauth2Scopes(Oauth2TokenInterface $token, array $required_scopes): ?Response {
+  protected function validateOauth2Scopes(Oauth2TokenInterface $token, array $required_scopes): ?CacheableResponse {
     if (empty($required_scopes)) {
       return NULL;
     }
 
-    $token_scopes = $token->get('scopes')->referencedEntities();
-    $token_scope_ids = array_map(fn($scope) => $scope->id(), $token_scopes);
-    $missing_scopes = array_diff($required_scopes, $token_scope_ids);
+    $field_item_list = $token->get('scopes');
+    $token_scope_entities = $this->entityTypeManager()->getStorage('oauth2_scope')->loadMultiple(
+      array_map(
+        fn (array $value) => $value['scope_id'],
+        $field_item_list->getValue(),
+      )
+    );
+    $token_scopes = array_map(
+      fn($scope) => $scope->label(),
+      $token_scope_entities,
+    );
+    $missing_scopes = array_diff($required_scopes, $token_scopes);
 
     if (empty($missing_scopes)) {
       return NULL;
     }
 
     $scope_string = implode(' ', $missing_scopes);
-    return new Response('', 403, [
+    $response = new CacheableResponse('', 403, [
       'WWW-Authenticate' => sprintf(
         'Bearer realm="MCP Tools", error="insufficient_scope", scope="%s"',
         $scope_string
       ),
-      'Cache-Control' => 'no-store',
     ]);
+    $response->getCacheableMetadata()->setCacheMaxAge(0)->addCacheContexts(['user']);
+    return $response;
   }
 
   /**
@@ -247,39 +237,39 @@ class McpToolInvokeController extends ControllerBase {
    * @param \Symfony\Component\HttpFoundation\Request $request
    *   The HTTP request.
    *
-   * @return \Symfony\Component\HttpFoundation\Response|null
+   * @return \Drupal\Core\Cache\CacheableResponse|null
    *   Error response if auth fails, NULL if auth passes.
    */
-  protected function checkAuthenticationRequirements(array $auth_metadata, Request $request): ?Response {
+  protected function checkAuthenticationRequirements(array $auth_metadata, Request $request): ?CacheableResponse {
     $auth_level = $auth_metadata['level'] ?? NULL;
     $required_scopes = $auth_metadata['scopes'] ?? [];
 
     if ($auth_level === 'required' && $this->currentUser()->isAnonymous()) {
-      return new Response('', 401, [
+      $response = new CacheableResponse('', 401, [
         'WWW-Authenticate' => 'Bearer realm="MCP Tools"',
-        'Cache-Control' => 'no-store',
-        'Pragma' => 'no-cache',
       ]);
+      $response->getCacheableMetadata()->setCacheMaxAge(0)->addCacheContexts(['user']);
+      return $response;
     }
 
     $authorization = $request->headers->get('Authorization');
     $is_bearer = $authorization && str_starts_with($authorization, 'Bearer ');
 
     if (!empty($required_scopes) && !$is_bearer) {
-      return new Response('', 401, [
+      $response = new CacheableResponse('', 401, [
         'WWW-Authenticate' => 'Bearer realm="MCP Tools"',
-        'Cache-Control' => 'no-store',
       ]);
+      $response->getCacheableMetadata()->setCacheMaxAge(0)->addCacheContexts(['user']);
+      return $response;
     }
 
     if (!$is_bearer) {
       return NULL;
     }
 
-    $token_value = substr($authorization, 7);
-    $token_result = $this->validateOauth2Token($token_value);
+    $token_result = $this->validateOauth2Token($request);
 
-    if ($token_result instanceof Response) {
+    if ($token_result instanceof CacheableResponse) {
       return $token_result;
     }
 
@@ -298,11 +288,11 @@ class McpToolInvokeController extends ControllerBase {
    * @param int $http_status
    *   HTTP status code.
    *
-   * @return \Symfony\Component\HttpFoundation\JsonResponse
+   * @return \Drupal\Core\Cache\CacheableJsonResponse
    *   The error response.
    */
-  protected function createErrorResponse(int $code, string $message, mixed $id = NULL, int $http_status = 400): JsonResponse {
-    return new JsonResponse([
+  protected function createErrorResponse(int $code, string $message, mixed $id = NULL, int $http_status = 400): CacheableJsonResponse {
+    $response = new CacheableJsonResponse([
       'jsonrpc' => '2.0',
       'error' => [
         'code' => $code,
@@ -310,55 +300,8 @@ class McpToolInvokeController extends ControllerBase {
       ],
       'id' => $id,
     ], $http_status);
-  }
-
-  /**
-   * Delegates execution to JSON-RPC handler.
-   *
-   * @param array $rpc_payload
-   *   The JSON-RPC payload.
-   *
-   * @return \Symfony\Component\HttpFoundation\Response
-   *   The response.
-   */
-  protected function delegateToJsonRpc(array $rpc_payload): Response {
-    try {
-      $version = $this->handler::supportedVersion();
-      $params = new ParameterBag($rpc_payload['params'] ?? []);
-      $id = $rpc_payload['id'] ?? NULL;
-      $is_notification = $id === NULL;
-
-      $rpc_request = new RpcRequest(
-        $version,
-        $rpc_payload['method'],
-        $is_notification,
-        $id,
-        $params
-      );
-
-      $rpc_responses = $this->handler->batch([$rpc_request]);
-
-      if (empty($rpc_responses)) {
-        // This is a notification (no response expected).
-        return new Response('', 204);
-      }
-
-      $rpc_response = reset($rpc_responses);
-
-      // Return JSON-RPC response as-is (includes error or result).
-      return new JsonResponse($rpc_response->getSerializedObject());
-
-    }
-    catch (JsonRpcException $e) {
-      return new JsonResponse([
-        'jsonrpc' => '2.0',
-        'error' => [
-          'code' => $e->getCode(),
-          'message' => $e->getMessage(),
-        ],
-        'id' => $rpc_payload['id'] ?? NULL,
-      ], 500);
-    }
+    $response->getCacheableMetadata()->setCacheMaxAge(0);
+    return $response;
   }
 
 }
